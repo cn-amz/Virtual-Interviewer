@@ -5,6 +5,7 @@ __pycache__/
 .ruff_cache/
 node_modules/
 dist/
+*.egg-info/
 .env
 .env.*
 !.env.example
@@ -22,4 +23,3 @@ data/ability_graphs/
 *.docx
 *.pdf
 *.zip
-
