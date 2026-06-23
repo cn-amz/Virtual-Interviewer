@@ -12,7 +12,7 @@ Updated: 2026-06-24 00:20 Asia/Shanghai
 | Formal design spec | Done | 100% | Saved under `docs/superpowers/specs/`. |
 | Implementation plan | Done | 100% | Saved under `docs/superpowers/plans/`. |
 | GitHub baseline upload | Done | 100% | Safe baseline pushed to `origin/main`; private profile files excluded. |
-| MVP implementation | Not started | 0% | Will proceed with subagent-driven development after baseline upload. |
+| MVP implementation | In progress | 5% | Task 1 repository baseline is being completed on `codex/virtual-interviewer-mvp`. |
 
 ## Current Decisions
 
@@ -48,3 +48,4 @@ Updated: 2026-06-24 00:20 Asia/Shanghai
 | 2026-06-24 00:00 | Initialize planning docs | Completed | None |
 | 2026-06-24 00:00 | Prepare GitHub-safe progress tracking | Completed | `gh` unavailable, but `git push` works |
 | 2026-06-24 00:20 | Push safe planning baseline to GitHub | Completed | Private profile data excluded by `.gitignore` |
+| 2026-06-24 00:24 | Start implementation branch | Completed | Created `codex/virtual-interviewer-mvp`; Claude delegation script is available |
