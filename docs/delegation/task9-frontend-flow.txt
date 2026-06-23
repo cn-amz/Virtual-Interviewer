@@ -1,0 +1,16 @@
+﻿All 7 files match the plan exactly.
+
+**Summary:** Implemented Task 9 — frontend interview flow with API client, WebSocket realtime hook, three pages (setup/interview/report), App screen routing, and CSS extensions. Build passes with `tsc && vite build` producing 3 output assets.
+
+**Files changed:**
+- `apps/web/src/api/client.ts` — created; `listProfiles()` and `createMockReport()` fetching from `http://localhost:8000`
+- `apps/web/src/realtime/useInterviewSession.ts` — created; WebSocket hook with `start`/`sendText`/`end` and event accumulation
+- `apps/web/src/pages/SetupPage.tsx` — created; setup screen with start button
+- `apps/web/src/pages/InterviewPage.tsx` — created; two-panel interview screen with connection controls, text input, and event stream
+- `apps/web/src/pages/ReportPage.tsx` — created; report screen fetching mock-report on mount, displaying score and ability tree branches
+- `apps/web/src/App.tsx` — modified; replaced static hero with `Screen` state machine routing between setup/interview/report
+- `apps/web/src/styles.css` — modified; appended panel, interview-grid, button, textarea, event-list, and responsive styles
+
+**Verification:** `npm run build` from `apps/web` — TypeScript compiles without errors, Vite produces `dist/index.html`, `dist/assets/index-*.css`, and `dist/assets/index-*.js`.
+
+**Notes/Risks:** The WebSocket hook does not include cleanup (`socket.close()` on unmount) — fine for MVP but could leak connections if the interview page remounts. The report page uses `any` for the report state; typing it properly would require a shared types package.

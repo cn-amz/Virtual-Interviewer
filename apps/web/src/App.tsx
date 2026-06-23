@@ -1,13 +1,18 @@
+import { useState } from "react";
+import { InterviewPage } from "./pages/InterviewPage";
+import { ReportPage } from "./pages/ReportPage";
+import { SetupPage } from "./pages/SetupPage";
+
+type Screen = "setup" | "interview" | "report";
+
 export function App() {
+  const [screen, setScreen] = useState<Screen>("setup");
+
   return (
     <main className="app-shell">
-      <section className="hero">
-        <p className="eyebrow">AI Agent Application Innovation</p>
-        <h1>实时通话虚拟面试官</h1>
-        <p>
-          面向机械臂运控算法工程师岗位，结合百炼实时模型、RAG、工具调用和能力树复盘。
-        </p>
-      </section>
+      {screen === "setup" && <SetupPage onStart={() => setScreen("interview")} />}
+      {screen === "interview" && <InterviewPage onFinish={() => setScreen("report")} />}
+      {screen === "report" && <ReportPage />}
     </main>
   );
 }
