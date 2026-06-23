@@ -1,6 +1,6 @@
 # Virtual Interviewer Progress Report
 
-Updated: 2026-06-24 00:49 Asia/Shanghai
+Updated: 2026-06-24 00:55 Asia/Shanghai
 
 ## Overall Completion
 
@@ -12,7 +12,7 @@ Updated: 2026-06-24 00:49 Asia/Shanghai
 | Formal design spec | Done | 100% | Saved under `docs/superpowers/specs/`. |
 | Implementation plan | Done | 100% | Saved under `docs/superpowers/plans/`. |
 | GitHub baseline upload | Done | 100% | Safe baseline pushed to `origin/main`; private profile files excluded. |
-| MVP implementation | In progress | 32% | Tasks 1-4 complete on `codex/virtual-interviewer-mvp`. |
+| MVP implementation | In progress | 41% | Tasks 1-5 complete on `codex/virtual-interviewer-mvp`. |
 
 ## Current Decisions
 
@@ -52,6 +52,7 @@ Updated: 2026-06-24 00:49 Asia/Shanghai
 | 2026-06-24 00:32 | Task 2 backend scaffold | Completed | Claude implemented; Codex reviewed files and verified `pytest -q` -> 1 passed, 1 warning |
 | 2026-06-24 00:44 | Task 3 profile and JD loading | Completed | Claude implemented; Codex reviewed files and verified profile tests -> 2 passed, full backend -> 3 passed |
 | 2026-06-24 00:49 | Task 4 state machine and tool router | Completed | Claude implemented; Codex reviewed files and verified target tests -> 6 passed, full backend -> 9 passed |
+| 2026-06-24 00:55 | Task 5 scoring, report, ability tree | Completed | Claude implemented; Codex reviewed files and verified target tests -> 2 passed, full backend -> 11 passed |
 
 ## Implementation Task Status
 
@@ -61,7 +62,7 @@ Updated: 2026-06-24 00:49 Asia/Shanghai
 | Task 2: Backend Project Scaffold | Done | Local verification in `services/api`: `pytest -q` -> 1 passed | StarletteDeprecationWarning from FastAPI TestClient import; generated egg-info was accidentally committed then removed in `1059932` |
 | Task 3: Profile And JD Loading | Done | `pytest tests/test_profile_loader.py -q` -> 2 passed; full backend `pytest -q` -> 3 passed | Depends on local ignored `data/profiles/豆瓣酱` for current tests |
 | Task 4: Interview State Machine And Tool Router | Done | `pytest tests/test_interview_state.py tests/test_tool_router.py -q` -> 6 passed; full backend `pytest -q` -> 9 passed | None |
-| Task 5: Scoring, Ability Tree, And Report Generation | Not started |  |  |
+| Task 5: Scoring, Ability Tree, And Report Generation | Done | `pytest tests/test_ability_tree.py tests/test_reporting.py -q` -> 2 passed; full backend `pytest -q` -> 11 passed | Deterministic MVP scoring is intentionally simple |
 | Task 6: Interview Storage And Mock Realtime WebSocket | Not started |  |  |
 | Task 7: Publication Provider Interface | Not started |  |  |
 | Task 8: Frontend Scaffold | Not started |  |  |

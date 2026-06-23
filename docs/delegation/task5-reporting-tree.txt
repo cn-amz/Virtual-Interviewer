@@ -1,0 +1,23 @@
+﻿All 11 tests pass. Task 5 is complete.
+
+Summary:
+- Created `services/api/app/scoring.py` with `AnswerScore` Pydantic model and deterministic `score_answer` function
+- Created `services/api/app/ability_tree.py` with `empty_ability_tree` and `update_tree_from_report` functions
+- Created `services/api/app/reporting.py` with `generate_report` function
+- Created `services/api/tests/test_ability_tree.py` with ability tree update test
+- Created `services/api/tests/test_reporting.py` with report generation test
+
+Files changed:
+- `services/api/app/scoring.py` (new)
+- `services/api/app/ability_tree.py` (new)
+- `services/api/app/reporting.py` (new)
+- `services/api/tests/test_ability_tree.py` (new)
+- `services/api/tests/test_reporting.py` (new)
+
+Verification:
+- `pytest tests/test_ability_tree.py tests/test_reporting.py -q`: 2 passed
+- `pytest -q` (full suite): 11 passed, no regressions
+
+Notes/Risks:
+- `score_answer` is fully deterministic (no randomization), matching the MVP spec exactly
+- `generate_report` references `app.scoring.score_answer` via absolute import, matching the existing project convention used by `app.profile_loader` and `app.interview_state`
