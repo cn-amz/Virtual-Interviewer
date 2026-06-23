@@ -1,0 +1,11 @@
+﻿All 14 tests pass (including the 2 new publication tests).
+
+Summary: Created `services/api/app/publish.py` with `PublicEndpoint` dataclass, `PublicEndpointProvider` Protocol, `LocalOnlyProvider`, and `ReservedProvider` exactly as specified in the Task 7 plan. Created `services/api/tests/test_publish.py` with tests for the local provider localhost URL and reserved provider notes.
+
+Files changed:
+- `services/api/app/publish.py` (created)
+- `services/api/tests/test_publish.py` (created)
+
+Verification: `tests/test_publish.py` — 2 passed. Full suite — 14 passed, 1 warning (Starlette deprecation, pre-existing).
+
+Notes/Risks: None.
