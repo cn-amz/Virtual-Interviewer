@@ -1,6 +1,6 @@
 # Virtual Interviewer Progress Report
 
-Updated: 2026-06-24 00:32 Asia/Shanghai
+Updated: 2026-06-24 00:38 Asia/Shanghai
 
 ## Overall Completion
 
@@ -56,7 +56,7 @@ Updated: 2026-06-24 00:32 Asia/Shanghai
 | Plan Task | Status | Completion Evidence | Issues |
 | --- | --- | --- | --- |
 | Task 1: Repository Baseline | Done | Commits `434a8a7`, `e25faf8`, `8935d4d`; branch pushed | `gh` unavailable; using plain git |
-| Task 2: Backend Project Scaffold | Done | Local verification in `services/api`: `pytest -q` -> 1 passed | StarletteDeprecationWarning from FastAPI TestClient import |
+| Task 2: Backend Project Scaffold | Done | Local verification in `services/api`: `pytest -q` -> 1 passed | StarletteDeprecationWarning from FastAPI TestClient import; generated egg-info was accidentally committed then removed in `1059932` |
 | Task 3: Profile And JD Loading | Not started |  |  |
 | Task 4: Interview State Machine And Tool Router | Not started |  |  |
 | Task 5: Scoring, Ability Tree, And Report Generation | Not started |  |  |
