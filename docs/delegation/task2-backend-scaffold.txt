@@ -1,0 +1,19 @@
+﻿All checks pass. Here's the summary:
+
+**Summary:** Created 7 files for Task 2 (Backend Project Scaffold) exactly as specified in the implementation plan. The FastAPI backend has a `/api/health` endpoint returning `{"status":"ok"}`, CORS middleware configured for localhost:5173 and 127.0.0.1:5173, pydantic-settings with env support and `data_dir` property, and a passing pytest health test.
+
+**Files changed:**
+- `services/api/pyproject.toml` — created (project metadata, deps, pytest config)
+- `services/api/app/__init__.py` — created (empty package marker)
+- `services/api/app/main.py` — created (FastAPI app with CORS, health router)
+- `services/api/app/config.py` — created (Settings with env, data_dir property)
+- `services/api/app/routers/__init__.py` — created (re-exports health router)
+- `services/api/app/routers/health.py` — created (GET /api/health → {"status":"ok"})
+- `services/api/tests/test_health.py` — created (TestClient health test)
+
+**Verification:**
+- Python 3.11.7, venv created, all dependencies installed
+- `pytest -q` → `1 passed` (services/api/tests/test_health.py::test_health_returns_ok)
+- One harmless Starlette deprecation warning about httpx (upstream, doesn't affect correctness)
+
+**Notes/Risks:** None. All content matches the plan exactly.

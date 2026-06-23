@@ -1,6 +1,6 @@
 # Virtual Interviewer Progress Report
 
-Updated: 2026-06-24 00:20 Asia/Shanghai
+Updated: 2026-06-24 00:32 Asia/Shanghai
 
 ## Overall Completion
 
@@ -12,7 +12,7 @@ Updated: 2026-06-24 00:20 Asia/Shanghai
 | Formal design spec | Done | 100% | Saved under `docs/superpowers/specs/`. |
 | Implementation plan | Done | 100% | Saved under `docs/superpowers/plans/`. |
 | GitHub baseline upload | Done | 100% | Safe baseline pushed to `origin/main`; private profile files excluded. |
-| MVP implementation | In progress | 5% | Task 1 repository baseline is being completed on `codex/virtual-interviewer-mvp`. |
+| MVP implementation | In progress | 14% | Task 1 and Task 2 complete on `codex/virtual-interviewer-mvp`. |
 
 ## Current Decisions
 
@@ -49,3 +49,20 @@ Updated: 2026-06-24 00:20 Asia/Shanghai
 | 2026-06-24 00:00 | Prepare GitHub-safe progress tracking | Completed | `gh` unavailable, but `git push` works |
 | 2026-06-24 00:20 | Push safe planning baseline to GitHub | Completed | Private profile data excluded by `.gitignore` |
 | 2026-06-24 00:24 | Start implementation branch | Completed | Created `codex/virtual-interviewer-mvp`; Claude delegation script is available |
+| 2026-06-24 00:32 | Task 2 backend scaffold | Completed | Claude implemented; Codex reviewed files and verified `pytest -q` -> 1 passed, 1 warning |
+
+## Implementation Task Status
+
+| Plan Task | Status | Completion Evidence | Issues |
+| --- | --- | --- | --- |
+| Task 1: Repository Baseline | Done | Commits `434a8a7`, `e25faf8`, `8935d4d`; branch pushed | `gh` unavailable; using plain git |
+| Task 2: Backend Project Scaffold | Done | Local verification in `services/api`: `pytest -q` -> 1 passed | StarletteDeprecationWarning from FastAPI TestClient import |
+| Task 3: Profile And JD Loading | Not started |  |  |
+| Task 4: Interview State Machine And Tool Router | Not started |  |  |
+| Task 5: Scoring, Ability Tree, And Report Generation | Not started |  |  |
+| Task 6: Interview Storage And Mock Realtime WebSocket | Not started |  |  |
+| Task 7: Publication Provider Interface | Not started |  |  |
+| Task 8: Frontend Scaffold | Not started |  |  |
+| Task 9: Frontend Interview Flow | Not started |  |  |
+| Task 10: Developer Script And Full Verification | Not started |  |  |
+| Task 11: Prepare For Bailian Live Adapter | Not started |  |  |
