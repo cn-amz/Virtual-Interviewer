@@ -1,6 +1,6 @@
 # Virtual Interviewer Progress Report
 
-Updated: 2026-06-24 00:00 Asia/Shanghai
+Updated: 2026-06-24 00:20 Asia/Shanghai
 
 ## Overall Completion
 
@@ -11,7 +11,7 @@ Updated: 2026-06-24 00:00 Asia/Shanghai
 | Input material setup | Done | 100% | Private local profile copied; public repo excludes private profile files. Target JD placeholder created. |
 | Formal design spec | Done | 100% | Saved under `docs/superpowers/specs/`. |
 | Implementation plan | Done | 100% | Saved under `docs/superpowers/plans/`. |
-| GitHub baseline upload | In progress | 30% | Local repository and remote setup pending. |
+| GitHub baseline upload | Done | 100% | Safe baseline pushed to `origin/main`; private profile files excluded. |
 | MVP implementation | Not started | 0% | Will proceed with subagent-driven development after baseline upload. |
 
 ## Current Decisions
@@ -36,7 +36,7 @@ Updated: 2026-06-24 00:00 Asia/Shanghai
 
 | Issue | Impact | Current Handling |
 | --- | --- | --- |
-| GitHub CLI `gh` is not installed | Cannot auto-open draft PR through `gh` | Use plain `git` push first; PR can be opened manually or after installing `gh`. |
+| GitHub CLI `gh` is not installed | Cannot auto-open draft PR through `gh` | Plain `git` push works; PR can be opened manually or after installing `gh`. |
 | Profile contains phone/email and resume files | Public GitHub privacy risk | Excluded from Git tracking; code will support private local data and later demo-safe sample data. |
 | Qwen-Omni live API needs credentials | Live realtime cannot be verified without key | MVP starts with mock realtime; live adapter has explicit readiness checks. |
 | Competition requires online link | Deployment cannot be ignored | Public endpoint provider interface included in plan. |
@@ -46,5 +46,5 @@ Updated: 2026-06-24 00:00 Asia/Shanghai
 | Time | Task | Result | Problems |
 | --- | --- | --- | --- |
 | 2026-06-24 00:00 | Initialize planning docs | Completed | None |
-| 2026-06-24 00:00 | Prepare GitHub-safe progress tracking | In progress | `gh` unavailable |
-
+| 2026-06-24 00:00 | Prepare GitHub-safe progress tracking | Completed | `gh` unavailable, but `git push` works |
+| 2026-06-24 00:20 | Push safe planning baseline to GitHub | Completed | Private profile data excluded by `.gitignore` |
