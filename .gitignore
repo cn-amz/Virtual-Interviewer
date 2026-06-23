@@ -1,0 +1,25 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+.superpowers/
+
+# Runtime and private user data
+data/profiles/*
+!data/profiles/.gitkeep
+data/interviews/
+data/ability_graphs/
+
+# Large or sensitive local artifacts
+*.pyc
+*.log
+*.docx
+*.pdf
+*.zip
+
