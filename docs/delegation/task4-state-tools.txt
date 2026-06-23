@@ -1,0 +1,13 @@
+﻿All 9 tests pass (3 existing + 6 new).
+
+Summary: Created `interview_state.py` with `InterviewState` dataclass and `STAGES` list, and `tool_router.py` with `ToolResult`, `ToolRouter` class, and `create_default_tool_router()` factory. All 6 new tests pass covering: warmup start, two-question stage advance, low-score clarification trigger, registered tool call, unknown tool rejection, and default router tool names.
+
+Files changed:
+- `services/api/app/interview_state.py` (created)
+- `services/api/app/tool_router.py` (created)
+- `services/api/tests/test_interview_state.py` (created)
+- `services/api/tests/test_tool_router.py` (created)
+
+Verification: `pytest tests/test_interview_state.py tests/test_tool_router.py -q` → 6 passed. Full `pytest -q` → 9 passed.
+
+Notes/Risks: None. Implementation matches the plan exactly. No modifications to existing files.
