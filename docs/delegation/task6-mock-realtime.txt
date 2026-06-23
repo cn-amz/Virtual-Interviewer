@@ -1,0 +1,17 @@
+﻿All done.
+
+Summary: Implemented Task 6 — JSON storage class, mock realtime WebSocket session, `/api/interviews/realtime` WebSocket route, `/api/interviews/mock-report` POST route, registered interviews router in app, and added the test for `create_mock_report`.
+
+Files changed:
+- `services/api/app/storage.py` (created) — `JsonStorage` with `write_interview`, `read_interview`, `write_ability_tree`
+- `services/api/app/realtime.py` (created) — `MockRealtimeSession` with `start_events` and `handle_text`
+- `services/api/app/routers/interviews.py` (created) — WebSocket `/api/interviews/realtime` and POST `/api/interviews/mock-report`
+- `services/api/app/routers/__init__.py` (modified) — added `interviews` import
+- `services/api/app/main.py` (modified) — registered `interviews.router`
+- `services/api/tests/test_interviews.py` (created) — `test_create_mock_report_returns_report_and_tree`
+
+Verification: `pytest -q` — 12 passed (all existing + new test).
+
+Notes/Risks:
+- The `create_mock_report` endpoint writes JSON files to `data/interviews/` and `data/ability_graphs/` at runtime. The `.gitignore` already has `data/interviews/` and `data/ability_graphs/` entries, so generated runtime files will not be tracked by Git.
+- WebSocket route is not covered by the test since `TestClient` doesn’t fully support WebSocket lifecycle in auto-asyncio mode.
