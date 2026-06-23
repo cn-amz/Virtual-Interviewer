@@ -1,3 +1,3 @@
-from app.routers import health
+from app.routers import health, profiles
 
-__all__ = ["health"]
+__all__ = ["health", "profiles"]

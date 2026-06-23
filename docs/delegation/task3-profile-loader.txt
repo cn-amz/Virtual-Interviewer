@@ -1,0 +1,21 @@
+﻿---
+
+**Summary:**
+Implemented Task 3 — Profile and JD Loading. Created Pydantic models (`ProfileSummary`, `JobDescription`, `SessionProfile`), a `ProfileLoader` class that reads UTF-8 JSON/Markdown from the `data/` directory, and a `/api/profiles` router with `GET /api/profiles` and `GET /api/profiles/{profile_id}/session-profile` endpoints. Registered the new router in `main.py` and `routers/__init__.py`.
+
+**Files changed:**
+- `services/api/app/models.py` — created with `ProfileSummary`, `JobDescription`, `SessionProfile`
+- `services/api/app/profile_loader.py` — created with `ProfileLoader` class
+- `services/api/app/routers/profiles.py` — created with profile list and session-profile endpoints
+- `services/api/app/main.py` — added profiles router import and registration
+- `services/api/app/routers/__init__.py` — added profiles to imports and exports
+- `services/api/tests/test_profile_loader.py` — created with 2 tests
+
+**Verification:**
+- `test_loader_finds_copied_profile` — passes (finds 豆瓣酱 profile)
+- `test_loader_builds_session_profile` — passes (loads full session profile with skills, JD content, qa_bank)
+- Full `pytest -q`: 3 passed (1 health + 2 profile loader)
+
+**Notes/Risks:**
+- The `list_profiles()` method filters out `.gitkeep` since it's a file, not a directory, so it won't appear in the results.
+- Tests depend on the local `data/profiles/豆瓣酱/` directory existing on this machine, which it does.
