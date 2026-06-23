@@ -33,6 +33,20 @@ npm run dev
 
 Open `http://localhost:5173`.
 
+## Dev Scripts
+
+Start backend:
+
+```powershell
+.\scripts\dev.ps1 backend
+```
+
+Start frontend in a second terminal:
+
+```powershell
+.\scripts\dev.ps1 frontend
+```
+
 ## Privacy
 
 Private profile and resume files are kept out of Git. See [docs/data-privacy.md](docs/data-privacy.md).

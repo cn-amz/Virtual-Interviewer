@@ -1,0 +1,13 @@
+﻿---
+
+**Summary:** Created `scripts/dev.ps1` with backend/frontend target selection (auto-creates .venv if missing, installs deps, starts uvicorn for backend; auto-installs npm deps if missing, starts vite dev for frontend). Added a "Dev Scripts" section to `README.md` documenting the one-liner commands.
+
+**Files changed:**
+- `scripts/dev.ps1` — created
+- `README.md` — added "Dev Scripts" section (lines 36-48)
+
+**Verification:**
+- Backend: `pytest -q` — 14 passed, 0 failures
+- Frontend: `npm run build` — built successfully (345ms, 3 output files)
+
+**Notes/Risks:** None. The pre-existing Starlette deprecation warning in tests is unrelated to these changes.
