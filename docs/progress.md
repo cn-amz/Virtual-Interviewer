@@ -1,6 +1,6 @@
 # Virtual Interviewer Progress Report
 
-Updated: 2026-06-24 01:09 Asia/Shanghai
+Updated: 2026-06-24 01:17 Asia/Shanghai
 
 ## Overall Completion
 
@@ -12,7 +12,7 @@ Updated: 2026-06-24 01:09 Asia/Shanghai
 | Formal design spec | Done | 100% | Saved under `docs/superpowers/specs/`. |
 | Implementation plan | Done | 100% | Saved under `docs/superpowers/plans/`. |
 | GitHub baseline upload | Done | 100% | Safe baseline pushed to `origin/main`; private profile files excluded. |
-| MVP implementation | In progress | 59% | Tasks 1-7 complete on `codex/virtual-interviewer-mvp`. |
+| MVP implementation | In progress | 68% | Tasks 1-8 complete on `codex/virtual-interviewer-mvp`. |
 
 ## Current Decisions
 
@@ -55,6 +55,7 @@ Updated: 2026-06-24 01:09 Asia/Shanghai
 | 2026-06-24 00:55 | Task 5 scoring, report, ability tree | Completed | Claude implemented; Codex reviewed files and verified target tests -> 2 passed, full backend -> 11 passed |
 | 2026-06-24 01:04 | Task 6 storage and mock realtime | Completed | Claude implemented; Codex reviewed files and verified target test -> 1 passed, full backend -> 12 passed |
 | 2026-06-24 01:09 | Task 7 publication provider interface | Completed | Claude implemented; Codex reviewed files and verified target tests -> 2 passed, full backend -> 14 passed |
+| 2026-06-24 01:17 | Task 8 frontend scaffold | Completed | Claude implemented; Codex reviewed files and verified `npm run build` -> built successfully |
 
 ## Implementation Task Status
 
@@ -67,7 +68,7 @@ Updated: 2026-06-24 01:09 Asia/Shanghai
 | Task 5: Scoring, Ability Tree, And Report Generation | Done | `pytest tests/test_ability_tree.py tests/test_reporting.py -q` -> 2 passed; full backend `pytest -q` -> 11 passed | Deterministic MVP scoring is intentionally simple |
 | Task 6: Interview Storage And Mock Realtime WebSocket | Done | `pytest tests/test_interviews.py -q` -> 1 passed; full backend `pytest -q` -> 12 passed | Runtime JSON written under ignored `data/interviews` and `data/ability_graphs` |
 | Task 7: Publication Provider Interface | Done | `pytest tests/test_publish.py -q` -> 2 passed; full backend `pytest -q` -> 14 passed | Providers are intentionally reserved interfaces, not real tunnel automation |
-| Task 8: Frontend Scaffold | Not started |  |  |
+| Task 8: Frontend Scaffold | Done | `npm run build` -> TypeScript and Vite production build succeeded | Added React type packages beyond plan because TypeScript JSX compilation needs them |
 | Task 9: Frontend Interview Flow | Not started |  |  |
 | Task 10: Developer Script And Full Verification | Not started |  |  |
 | Task 11: Prepare For Bailian Live Adapter | Not started |  |  |
