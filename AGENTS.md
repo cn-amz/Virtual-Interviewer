@@ -57,6 +57,16 @@ Codex should still own:
 
 When external UI code or designs are provided, Codex should treat them as draft input, then review for maintainability, consistency, security, and integration with the app architecture.
 
+## Issue Tracking & Competition Reporting
+
+Every issue discovered by the user or Codex must be written down and tracked to resolution. This is mandatory material for the final competition report.
+
+- Log each issue in a dedicated tracking file (e.g., `docs/issues.md`), including: discovery date, description, severity, and the initial state.
+- When an issue is resolved, record the root cause, the fix applied, and the verified outcome. Do not delete or overwrite the original entry; append the resolution.
+- If an issue is intentionally deferred (won't-fix), note the reason and the trade-off accepted.
+
+This ensures the final report has a complete, auditable trail of problems found, decisions made, and solutions converged.
+
 ## Project Ownership
 
 Codex remains responsible for:
@@ -66,4 +76,3 @@ Codex remains responsible for:
 - Integration with Alibaba Bailian APIs.
 - RAG, Function Calling, scoring, and ability-tree design.
 - Final verification and user-facing status.
-

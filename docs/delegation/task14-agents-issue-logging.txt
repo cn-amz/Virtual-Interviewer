@@ -1,0 +1,7 @@
+﻿**Summary:** Added a new "Issue Tracking & Competition Reporting" section to `AGENTS.md` that mandates logging every discovered issue in `docs/issues.md` with discovery date, description, severity, and tracking each to resolution (root cause, fix, verified outcome, or deferred reason).
+
+**Files changed:** `<project-root>\AGENTS.md`
+
+**Verification:** Read the file — the new section sits cleanly between "Frontend Visual Design" and "Project Ownership" without disrupting existing content.
+
+**Notes/Risks:** The section references `docs/issues.md` as the tracking file location. If that file doesn't exist yet, Codex will need to create it when the first issue is logged. No existing behavior is affected.
