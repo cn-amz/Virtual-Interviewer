@@ -95,6 +95,47 @@ Virtual-Interviewer/
 - 转发音频、图像帧、文本事件、模型输出音频、字幕事件。
 - 记录事件流，供转写、评分和复盘使用。
 
+#### Live 音频主链路
+
+后续 live 模式必须坚持 A 路线，由 Qwen-Omni-Realtime 直接理解音频，不在主链路中新增 Whisper/SenseVoice STT：
+
+```text
+Browser Microphone
+  -> MediaRecorder / AudioWorklet
+  -> frontend audio.chunk event
+  -> FastAPI /api/interviews/realtime WebSocket
+  -> Realtime Gateway
+  -> BailianRealtimeAdapter
+  -> Qwen-Omni-Realtime WebSocket
+  -> assistant.text.delta + assistant.audio.chunk
+  -> browser transcript + audio playback
+```
+
+前端事件：
+
+```json
+{"type": "audio.start", "mime_type": "audio/webm;codecs=opus", "sample_rate": 48000}
+{"type": "audio.chunk", "mime_type": "audio/webm;codecs=opus", "data": "<base64>"}
+{"type": "audio.stop"}
+```
+
+后端事件：
+
+```json
+{"type": "assistant.text.delta", "text": "..."}
+{"type": "assistant.audio.chunk", "mime_type": "audio/mpeg", "data": "<base64>"}
+{"type": "transcript.item", "speaker": "candidate", "text": "..."}
+{"type": "realtime.error", "message": "..."}
+```
+
+实现原则：
+
+- `MockRealtimeSession` 继续保留，供无 API Key 的本地开发和前端调试使用。
+- `BailianRealtimeSession` 新增在 `integrations/bailian/omni_realtime.py`，只负责百炼实时协议适配。
+- `RealtimeGateway` 根据 `REALTIME_MODE=mock|bailian` 切换 session 后端。
+- 前端先实现 `MediaRecorder`，如果百炼要求 PCM16 或更低延迟，再增加 `AudioWorklet` 转码路径。
+- 浏览器麦克风权限和 HTTPS 要在公网演示阶段重点验证；localhost 可直接调试麦克风。
+
 接口草案：
 
 ```text

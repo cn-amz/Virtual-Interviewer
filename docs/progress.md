@@ -69,6 +69,17 @@ Updated: 2026-06-24 01:48 Asia/Shanghai
 
 This is an engineering MVP, not final visual polish. It is ready for an external UI pass or design API pass.
 
+## Next Architecture Additions
+
+| Addition | Status | Notes |
+| --- | --- | --- |
+| Browser microphone capture | Planned | Use `MediaRecorder` first; later add `AudioWorklet` only if Qwen-Omni requires PCM/low-latency frames. |
+| Live Qwen-Omni-Realtime adapter | Planned | Keep audio understanding in Omni API; do not reintroduce Whisper/SenseVoice STT into the main path. |
+| Realtime mode switch | Planned | `mock` remains default; `bailian` requires `DASHSCOPE_API_KEY`. |
+| Assistant audio playback | Planned | Frontend should play `assistant.audio.chunk` and show text deltas. |
+
+Phase 2 implementation plan: `docs/superpowers/plans/2026-06-24-live-audio-omni-phase2.md`.
+
 ## Implementation Task Status
 
 | Plan Task | Status | Completion Evidence | Issues |
