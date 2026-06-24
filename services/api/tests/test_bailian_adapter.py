@@ -138,6 +138,37 @@ async def test_send_audio_start_raises_not_implemented():
 
 
 @pytest.mark.asyncio
+async def test_send_audio_start_accepts_pcm16():
+    factory = FakeWebSocketFactory()
+    adapter = BailianRealtimeAdapter(
+        BailianRealtimeConfig(api_key="sk-test", model="qwen3.5-omni-plus-realtime", url="wss://example.com"),
+        websocket_connect=factory,
+    )
+    await adapter.connect()
+
+    events = await adapter.send_audio_start("audio/pcm", 16000)
+
+    assert events == [{"type": "audio.started", "mode": "bailian", "mime_type": "audio/pcm", "sample_rate": 16000}]
+
+
+@pytest.mark.asyncio
+async def test_text_input_uses_local_low_cost_interviewer_path():
+    factory = FakeWebSocketFactory()
+    adapter = BailianRealtimeAdapter(
+        BailianRealtimeConfig(api_key="sk-test", model="qwen3.5-omni-plus-realtime", url="wss://example.com"),
+        websocket_connect=factory,
+    )
+    await adapter.connect()
+
+    events = await adapter.handle_text("我通过ROS2完成机械臂运动控制。")
+
+    assert any(event["type"] == "transcript.item" and event["speaker"] == "candidate" for event in events)
+    assert any(event["type"] == "assistant.text.delta" for event in events)
+    assert any(event == {"type": "text.mode", "mode": "local-low-cost"} for event in events)
+    assert len(factory.socket.sent) == 1
+
+
+@pytest.mark.asyncio
 async def test_send_audio_chunk_raises_not_implemented():
     factory = FakeWebSocketFactory()
     adapter = BailianRealtimeAdapter(

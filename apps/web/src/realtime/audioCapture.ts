@@ -1,4 +1,5 @@
-const PREFERRED_MIME_TYPES = ["audio/webm;codecs=opus", "audio/webm"];
+const PCM_SAMPLE_RATE = 16000;
+const WORKLET_URL = "/pcm16-capture-processor.js";
 
 export type MicStatus = "idle" | "requesting" | "recording" | "error";
 
@@ -6,31 +7,27 @@ export type AudioCaptureState = {
   status: MicStatus;
   error?: string;
   mimeType?: string;
+  sampleRate?: number;
 };
 
 export type AudioChunk = {
   base64: string;
   mimeType: string;
+  sampleRate: number;
 };
 
 type ChunkCallback = (chunk: AudioChunk) => void;
 
 export function createAudioCapture(onChunk: ChunkCallback) {
-  let mediaRecorder: MediaRecorder | null = null;
-  let stream: MediaStream | null = null;
+  let audioContext: AudioContext | null = null;
+  let mediaStream: MediaStream | null = null;
+  let sourceNode: MediaStreamAudioSourceNode | null = null;
+  let workletNode: AudioWorkletNode | null = null;
+  let silentGain: GainNode | null = null;
   let state: AudioCaptureState = { status: "idle" };
 
   function getState(): AudioCaptureState {
     return state;
-  }
-
-  function resolveMimeType(): string {
-    for (const candidate of PREFERRED_MIME_TYPES) {
-      if (MediaRecorder.isTypeSupported(candidate)) {
-        return candidate;
-      }
-    }
-    throw new Error("当前浏览器不支持所需音频编码（opus/webm）。");
   }
 
   async function start(): Promise<void> {
@@ -39,28 +36,47 @@ export function createAudioCapture(onChunk: ChunkCallback) {
     state = { status: "requesting" };
 
     try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mimeType = resolveMimeType();
+      if (!window.AudioContext || !("audioWorklet" in AudioContext.prototype)) {
+        throw new Error("当前浏览器不支持 AudioWorklet，无法采集 16 kHz PCM 音频。");
+      }
 
-      mediaRecorder = new MediaRecorder(stream, { mimeType });
-      state = { status: "recording", mimeType };
+      mediaStream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
 
-      mediaRecorder.ondataavailable = (event) => {
-        if (event.data.size === 0) return;
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const result = typeof reader.result === "string" ? reader.result : "";
-          const base64 = result.split(",")[1];
-          if (base64) onChunk({ base64, mimeType });
-        };
-        reader.readAsDataURL(event.data);
+      audioContext = new AudioContext({ sampleRate: PCM_SAMPLE_RATE });
+      await audioContext.audioWorklet.addModule(WORKLET_URL);
+
+      sourceNode = audioContext.createMediaStreamSource(mediaStream);
+      workletNode = new AudioWorkletNode(audioContext, "pcm16-capture-processor");
+      silentGain = audioContext.createGain();
+      silentGain.gain.value = 0;
+
+      workletNode.port.onmessage = (event: MessageEvent<ArrayBuffer>) => {
+        if (event.data.byteLength === 0) return;
+        onChunk({
+          base64: arrayBufferToBase64(event.data),
+          mimeType: "audio/pcm",
+          sampleRate: PCM_SAMPLE_RATE,
+        });
       };
 
-      mediaRecorder.start(250);
+      sourceNode.connect(workletNode);
+      workletNode.connect(silentGain);
+      silentGain.connect(audioContext.destination);
+
+      state = {
+        status: "recording",
+        mimeType: "audio/pcm",
+        sampleRate: PCM_SAMPLE_RATE,
+      };
     } catch (error) {
-      stream?.getTracks().forEach((track) => track.stop());
-      mediaRecorder = null;
-      stream = null;
+      await cleanup();
       state = {
         status: "error",
         error: error instanceof Error ? error.message : "无法启动麦克风。",
@@ -69,15 +85,37 @@ export function createAudioCapture(onChunk: ChunkCallback) {
     }
   }
 
-  function stop(): void {
-    if (mediaRecorder && mediaRecorder.state !== "inactive") {
-      mediaRecorder.stop();
+  async function cleanup(): Promise<void> {
+    workletNode?.port.close();
+    sourceNode?.disconnect();
+    workletNode?.disconnect();
+    silentGain?.disconnect();
+    mediaStream?.getTracks().forEach((track) => track.stop());
+    if (audioContext && audioContext.state !== "closed") {
+      await audioContext.close();
     }
-    stream?.getTracks().forEach((track) => track.stop());
-    mediaRecorder = null;
-    stream = null;
+    audioContext = null;
+    mediaStream = null;
+    sourceNode = null;
+    workletNode = null;
+    silentGain = null;
+  }
+
+  function stop(): void {
+    void cleanup();
     state = { status: "idle" };
   }
 
   return { getState, start, stop };
+}
+
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let binary = "";
+  const chunkSize = 0x8000;
+  for (let index = 0; index < bytes.length; index += chunkSize) {
+    const chunk = bytes.subarray(index, index + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+  return btoa(binary);
 }

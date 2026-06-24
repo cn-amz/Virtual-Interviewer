@@ -72,6 +72,7 @@ export function useInterviewSession() {
         type: "audio.chunk",
         data: chunk.base64,
         mime_type: chunk.mimeType,
+        sample_rate: chunk.sampleRate,
       });
     });
 
@@ -88,7 +89,7 @@ export function useInterviewSession() {
           sendJson({
             type: "audio.start",
             mime_type: state.mimeType,
-            sample_rate: 48000,
+            sample_rate: state.sampleRate ?? 16000,
           });
         }
       })

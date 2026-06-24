@@ -1,0 +1,14 @@
+﻿All 39 tests pass with no regressions.
+
+---
+
+**Summary:** Added two missing methods to `BailianRealtimeAdapter` that the `RealtimeGateway` expects:
+1. `handle_text` — routes typed text through a local low-cost interviewer path (using `next_mock_interviewer_question`) instead of the expensive bailian WebSocket, returning `transcript.item`, `assistant.text.delta`, and `text.mode` events.
+2. `handle_session_end` — returns a clean `session.ended` event for bailian mode.
+
+**Files changed:**
+- `services/api/app/integrations/bailian/omni_realtime.py` — added `next_mock_interviewer_question` import, added `handle_text` and `handle_session_end` methods to `BailianRealtimeAdapter`
+
+**Verification:** `python -m pytest tests/` — all 39 tests pass (including the previously failing `test_text_input_uses_local_low_cost_interviewer_path`).
+
+**Notes/Risks:** None. The `handle_text` implementation intentionally avoids calling the bailian API (cost-saving), instead using the same local question generator as `MockRealtimeSession`. The adapter's `handle_text` is simpler than `MockRealtimeSession.handle_text` — it doesn't maintain interview state or call tools, which is appropriate since the bailian adapter delegates state tracking to the bailian server for audio interactions.

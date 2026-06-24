@@ -1,6 +1,6 @@
 # Virtual Interviewer Progress Report
 
-Updated: 2026-06-24 16:06 Asia/Shanghai
+Updated: 2026-06-24 16:40 Asia/Shanghai
 
 ## Overall Completion
 
@@ -15,6 +15,7 @@ Updated: 2026-06-24 16:06 Asia/Shanghai
 | MVP implementation | Done | 100% | Tasks 1-11 complete; local mock demo smoke tested; branch ready for review. |
 | Live audio architecture skeleton | Done | 70% | Browser microphone capture, audio WebSocket events, realtime gateway, and Bailian adapter methods are in code; real Qwen-Omni protocol mapping remains. |
 | Interviewer persona guardrails | Done | 85% | Central system prompt and mock question generator now constrain the app to interviewer-style short questions; richer adaptive strategy remains. |
+| Bailian realtime integration | Partial | 80% | WebSocket protocol mapping and PCM16 frontend capture are in place; live manual audio verification remains. |
 
 ## Current Decisions
 
@@ -83,6 +84,8 @@ This is an engineering MVP, not final visual polish. It is ready for an external
 | Realtime mode switch | Partial | `mock` remains default; `bailian` creates the adapter and returns visible readiness/implementation errors. |
 | Assistant audio playback | Planned | Frontend should play `assistant.audio.chunk` and show text deltas. |
 | Interviewer persona prompt | Done | `interviewer_persona.py` is the shared source for mock behavior and Bailian system prompt. |
+| Low-cost text training | Done | Typed answers in `bailian` mode use a local interviewer path instead of the realtime audio API. |
+| 16 kHz PCM microphone capture | Done | Frontend now uses AudioWorklet PCM16 chunks instead of MediaRecorder webm/opus. |
 
 Phase 2 implementation plan: `docs/superpowers/plans/2026-06-24-live-audio-omni-phase2.md`.
 
@@ -103,11 +106,12 @@ Phase 2 implementation plan: `docs/superpowers/plans/2026-06-24-live-audio-omni-
 | Task 11: Prepare For Bailian Live Adapter | Done | `pytest tests/test_bailian_adapter.py -q` -> 2 passed; full backend `pytest -q` -> 16 passed | Live Qwen-Omni call still requires `DASHSCOPE_API_KEY` and later adapter implementation |
 | Task 12: Live Audio Skeleton | Done | Backend `pytest -q` -> 31 passed; frontend `npm run build` -> succeeded | Browser can capture and stream mic chunks to backend mock mode; real Qwen-Omni protocol mapping and assistant audio playback remain |
 | Task 13: Interviewer Persona Guardrails | Done | Backend `pytest -q` -> 35 passed; frontend `npm run build` -> succeeded | Mock questions are still deterministic templates; later Qwen-Omni should use the same system prompt for adaptive dialogue |
+| Task 14: Bailian Text Fallback And PCM Audio | Done | Backend `pytest -q` -> 39 passed; frontend `npm run build` -> succeeded | Text mode is local low-cost; live audio still needs browser/manual verification |
 
 ## Final Verification
 
 | Command | Result |
 | --- | --- |
-| `cd services/api; .\.venv\Scripts\pytest -q` | 35 passed, 1 Starlette/httpx deprecation warning |
+| `cd services/api; .\.venv\Scripts\pytest -q` | 39 passed, 1 Starlette/httpx deprecation warning |
 | `cd apps/web; npm run build` | TypeScript compile and Vite production build succeeded |
 | Browser smoke at `http://127.0.0.1:5173` | Setup, mock WebSocket interview, tool events, and report screen worked |

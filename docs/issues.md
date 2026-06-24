@@ -48,7 +48,7 @@ This file records user-discovered and Codex-discovered issues that may become ma
 - Decision: Replace the placeholder with a minimal real WebSocket protocol adapter, while explicitly blocking unsupported browser audio formats.
 - Solution: Implemented WebSocket connection, `session.update`, `input_audio_buffer.append`, `session.finish`, server event mapping, and a backend relay task. Added `websockets` as an explicit backend dependency.
 - Verification: Backend `pytest -q` passed with 37 tests. Adapter tests verify URL construction, Bearer auth, session update payload, audio append, session finish, and server event mapping.
-- Remaining risk: Alibaba requires 16 kHz PCM input, but the frontend currently captures `audio/webm;codecs=opus` through `MediaRecorder`. Live connection should no longer fail with the mapping placeholder, but microphone audio still needs an AudioWorklet PCM16 capture path before full realtime speech works.
+- Remaining risk: The later PCM16 AudioWorklet task addresses the original browser audio format mismatch. Live microphone behavior still needs manual verification on the demo machine with the real browser permission flow.
 
 ## 2026-06-24 - Local `.env` Leaked Bailian Mode Into Tests
 
@@ -61,3 +61,27 @@ This file records user-discovered and Codex-discovered issues that may become ma
 - Solution: Added an autouse pytest fixture that sets `REALTIME_MODE=mock` and clears the settings cache before and after each test.
 - Verification: Full backend suite now passes with `37 passed`.
 - Remaining risk: Future integration tests that intentionally hit Bailian should opt in explicitly and be marked separately so they never run in normal offline test suites.
+
+## 2026-06-24 - Text Input Failed In Bailian Mode
+
+- Discovered by: User
+- Severity: High
+- Initial state: After switching to `REALTIME_MODE=bailian`, typing an answer produced `realtime.error: Session does not support handle_text`.
+- Impact: Text-based interview practice became unavailable even though text mode is important for lower cost training and for users who cannot use a microphone.
+- Diagnosis: `RealtimeGateway` dispatches `text.input` by calling `handle_text`, but `BailianRealtimeAdapter` only implemented audio realtime methods. Official realtime audio input should not be used for typed text because it is a different interaction mode and may add unnecessary cost.
+- Decision: Preserve typed answers as a local low-cost interviewer path inside the Bailian session, while keeping microphone input on Qwen-Omni-Realtime.
+- Solution: Added `BailianRealtimeAdapter.handle_text()` returning candidate transcript, `text.mode=local-low-cost`, and persona-based `assistant.text.delta` without sending extra events to the Bailian WebSocket.
+- Verification: Added adapter tests proving typed text returns local interviewer events and does not call the realtime WebSocket. Backend `pytest -q` now passes with 39 tests.
+- Remaining risk: The low-cost text path currently uses deterministic local persona questions. A later enhancement can route typed mode to a cheaper non-realtime Bailian text model if model-generated text interviews are needed.
+
+## 2026-06-24 - Browser Microphone Captured WebM Instead Of 16 kHz PCM
+
+- Discovered by: Codex
+- Severity: High
+- Initial state: The frontend microphone used `MediaRecorder` and sent `audio/webm;codecs=opus` at browser-native sample rates, while Alibaba Qwen-Omni-Realtime requires 16 kHz PCM input.
+- Impact: Even after the Bailian WebSocket connected, microphone audio could not be accepted by the realtime model.
+- Diagnosis: `MediaRecorder` is convenient for compressed browser audio, but the Bailian realtime API expects raw PCM frames. The capture layer had to change instead of adapting only the backend.
+- Decision: Replace MediaRecorder capture with AudioWorklet-based PCM16 capture and keep the existing WebSocket event shape.
+- Solution: Rewrote `apps/web/src/realtime/audioCapture.ts` to use `AudioContext` + `AudioWorklet`, added `apps/web/public/pcm16-capture-processor.js`, and changed audio chunks to `audio/pcm` with `sample_rate=16000`.
+- Verification: Frontend `npm run build` succeeded. Backend accepts `audio/pcm` at `16000` in adapter tests.
+- Remaining risk: Browser support and microphone permission behavior still need live manual testing on the demo machine; some browsers may ignore the requested `AudioContext` sample rate, so the worklet includes downsampling to 16 kHz.

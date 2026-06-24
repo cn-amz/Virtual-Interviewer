@@ -8,7 +8,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import websockets
 
-from app.interviewer_persona import build_interviewer_system_prompt
+from app.interviewer_persona import build_interviewer_system_prompt, next_mock_interviewer_question
 
 
 WebSocketConnect = Callable[..., Awaitable[Any]]
@@ -73,6 +73,17 @@ class BailianRealtimeAdapter:
 
     def start_events(self) -> list[dict]:
         return [{"type": "session.ready", "mode": "bailian"}]
+
+    async def handle_text(self, text: str) -> list[dict]:
+        reply = next_mock_interviewer_question("project_deep_dive", text)
+        return [
+            {"type": "transcript.item", "speaker": "candidate", "text": text},
+            {"type": "assistant.text.delta", "text": reply},
+            {"type": "text.mode", "mode": "local-low-cost"},
+        ]
+
+    async def handle_session_end(self) -> list[dict]:
+        return [{"type": "session.ended", "mode": "bailian"}]
 
     async def send_audio_start(self, mime_type: str, sample_rate: int | None) -> list[dict]:
         if not self._is_supported_pcm(mime_type, sample_rate):
