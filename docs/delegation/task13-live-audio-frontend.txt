@@ -1,0 +1,15 @@
+﻿**Summary:** Implemented Phase 2 frontend microphone capture skeleton. Created `audioCapture.ts` as a pure utility using `MediaRecorder` with `audio/webm;codecs=opus` → `audio/webm` fallback and base64 chunk encoding. Extended `useInterviewSession` with `startMicrophone`/`stopMicrophone` sending normalized `audio.start`/`audio.chunk`/`audio.stop` events over the existing WebSocket. Added microphone toggle button and status/error display to `InterviewPage.tsx`. Added minimal CSS for mic state indicators. All existing text mock flow kept intact.
+
+**Files changed:**
+- `apps/web/src/realtime/audioCapture.ts` — new file
+- `apps/web/src/realtime/useInterviewSession.ts` — added mic capture and WS event wiring
+- `apps/web/src/pages/InterviewPage.tsx` — added mic button, status, error display
+- `apps/web/src/styles.css` — added `.mic-status*`, `.mic-error`, `.mic-active-button`, disabled styles
+
+**Verification:** `npm run build` (tsc + vite build) passed cleanly — 37 modules transformed, 0 TypeScript errors.
+
+**Notes/Risks:**
+- No external packages introduced; uses only browser-native `MediaRecorder` + `FileReader`.
+- Chunk interval is 250ms — adjustable if bandwidth/latency needs differ.
+- The `BlobEvent` type is accessed via untyped `event.data` to avoid potential TypeScript DOM lib gaps across versions.
+- Microphone requires HTTPS or localhost for `getUserMedia`; dev setup (localhost:5173 → localhost:8000) satisfies this.

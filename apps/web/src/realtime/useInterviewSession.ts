@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createAudioCapture, type MicStatus } from "./audioCapture";
 
 export type RealtimeEvent = {
   type: string;
@@ -8,15 +9,22 @@ export type RealtimeEvent = {
   summary?: string;
   stage?: string;
   action?: string;
+  bytes?: number;
+  mode?: string;
+  message?: string;
 };
 
 export function useInterviewSession() {
   const socketRef = useRef<WebSocket | null>(null);
+  const captureRef = useRef<ReturnType<typeof createAudioCapture> | null>(null);
   const [events, setEvents] = useState<RealtimeEvent[]>([]);
   const [connected, setConnected] = useState(false);
+  const [micStatus, setMicStatus] = useState<MicStatus>("idle");
+  const [micError, setMicError] = useState<string | undefined>();
 
   useEffect(() => {
     return () => {
+      captureRef.current?.stop();
       socketRef.current?.close();
     };
   }, []);
@@ -29,6 +37,9 @@ export function useInterviewSession() {
     socketRef.current = socket;
     socket.onopen = () => setConnected(true);
     socket.onclose = () => {
+      captureRef.current?.stop();
+      captureRef.current = null;
+      setMicStatus("idle");
       setConnected(false);
       socketRef.current = null;
     };
@@ -37,14 +48,84 @@ export function useInterviewSession() {
     };
   }
 
+  function sendJson(payload: unknown) {
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      socketRef.current.send(JSON.stringify(payload));
+    }
+  }
+
   function sendText(text: string) {
-    socketRef.current?.send(JSON.stringify({ type: "text.input", text }));
+    sendJson({ type: "text.input", text });
+  }
+
+  function startMicrophone() {
+    if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
+      setMicError("请先连接面试官。");
+      return;
+    }
+    if (captureRef.current) {
+      return;
+    }
+
+    const capture = createAudioCapture((chunk) => {
+      sendJson({
+        type: "audio.chunk",
+        data: chunk.base64,
+        mime_type: chunk.mimeType,
+      });
+    });
+
+    captureRef.current = capture;
+    setMicStatus("requesting");
+    setMicError(undefined);
+
+    capture
+      .start()
+      .then(() => {
+        const state = capture.getState();
+        setMicStatus(state.status);
+        if (state.mimeType) {
+          sendJson({
+            type: "audio.start",
+            mime_type: state.mimeType,
+            sample_rate: 48000,
+          });
+        }
+      })
+      .catch(() => {
+        const state = capture.getState();
+        setMicStatus(state.status);
+        setMicError(state.error ?? "麦克风启动失败。");
+        captureRef.current = null;
+      });
+  }
+
+  function stopMicrophone() {
+    captureRef.current?.stop();
+    captureRef.current = null;
+    setMicStatus("idle");
+    setMicError(undefined);
+    sendJson({ type: "audio.stop" });
   }
 
   function end() {
-    socketRef.current?.send(JSON.stringify({ type: "session.end" }));
+    captureRef.current?.stop();
+    captureRef.current = null;
+    setMicStatus("idle");
+    setMicError(undefined);
+    sendJson({ type: "session.end" });
     socketRef.current?.close();
   }
 
-  return { connected, events, start, sendText, end };
+  return {
+    connected,
+    events,
+    micStatus,
+    micError,
+    start,
+    sendText,
+    end,
+    startMicrophone,
+    stopMicrophone,
+  };
 }

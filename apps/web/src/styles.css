@@ -104,6 +104,46 @@ textarea {
   background: #f8fafc;
 }
 
+.mic-status {
+  margin: 8px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.mic-status--recording {
+  color: #dc2626;
+}
+
+.mic-status--requesting {
+  color: #d97706;
+}
+
+.mic-status--error {
+  color: #dc2626;
+}
+
+.mic-error {
+  margin: 4px 0 0;
+  color: #dc2626;
+  font-size: 13px;
+}
+
+.mic-active-button {
+  border: 0;
+  border-radius: 8px;
+  padding: 11px 16px;
+  font-weight: 700;
+  cursor: pointer;
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.mic-active-button:disabled,
+.secondary-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 @media (max-width: 860px) {
   .interview-grid {
     grid-template-columns: 1fr;

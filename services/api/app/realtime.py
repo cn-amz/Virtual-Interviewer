@@ -1,3 +1,5 @@
+import base64
+import binascii
 from uuid import uuid4
 
 from app.interview_state import InterviewState
@@ -15,7 +17,7 @@ class MockRealtimeSession:
 
     def start_events(self) -> list[dict]:
         return [
-            {"type": "session.ready", "session_id": self.session_id},
+            {"type": "session.ready", "session_id": self.session_id, "mode": "mock"},
             {
                 "type": "assistant.text.delta",
                 "text": "你好，我是你的虚拟面试官。我们先从一段简短自我介绍开始。",
@@ -28,7 +30,10 @@ class MockRealtimeSession:
         self.state.record_answer_score(3.5)
         action = self.state.next_action()
         self.state.advance_if_ready()
-        reply = "我会结合你的项目继续追问。请具体说明你在机械臂运动控制中改了什么、为什么这样改、效果如何。"
+        reply = (
+            "我会结合你的项目继续追问。请具体说明你在机械臂运动控制中"
+            "改进了什么、为什么这样改、效果如何。"
+        )
         self.transcript.append({"speaker": "assistant", "text": reply})
         return [
             {"type": "transcript.item", "speaker": "candidate", "text": text},
@@ -37,3 +42,30 @@ class MockRealtimeSession:
             {"type": "interview.action", "action": action, "stage": self.state.stage},
             {"type": "assistant.text.delta", "text": reply},
         ]
+
+    def handle_audio_start(
+        self, mime_type: str = "audio/webm", sample_rate: int | None = None
+    ) -> list[dict]:
+        return [
+            {
+                "type": "audio.started",
+                "mode": "mock",
+                "mime_type": mime_type,
+                "sample_rate": sample_rate,
+            }
+        ]
+
+    def handle_audio_chunk(
+        self, data_base64: str, mime_type: str = "audio/webm"
+    ) -> list[dict]:
+        try:
+            raw = base64.b64decode(data_base64, validate=True)
+        except (binascii.Error, ValueError):
+            return [{"type": "audio.error", "message": "Invalid base64 audio chunk.", "mode": "mock"}]
+        return [{"type": "audio.received", "bytes": len(raw), "mode": "mock", "mime_type": mime_type}]
+
+    def handle_audio_stop(self) -> list[dict]:
+        return [{"type": "audio.stopped", "mode": "mock"}]
+
+    def handle_session_end(self) -> list[dict]:
+        return [{"type": "session.ended", "session_id": self.session_id}]

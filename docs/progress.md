@@ -1,6 +1,6 @@
 # Virtual Interviewer Progress Report
 
-Updated: 2026-06-24 01:48 Asia/Shanghai
+Updated: 2026-06-24 12:34 Asia/Shanghai
 
 ## Overall Completion
 
@@ -13,6 +13,7 @@ Updated: 2026-06-24 01:48 Asia/Shanghai
 | Implementation plan | Done | 100% | Saved under `docs/superpowers/plans/`. |
 | GitHub baseline upload | Done | 100% | Safe baseline pushed to `origin/main`; private profile files excluded. |
 | MVP implementation | Done | 100% | Tasks 1-11 complete; local mock demo smoke tested; branch ready for review. |
+| Live audio architecture skeleton | Done | 70% | Browser microphone capture, audio WebSocket events, realtime gateway, and Bailian adapter methods are in code; real Qwen-Omni protocol mapping remains. |
 
 ## Current Decisions
 
@@ -39,6 +40,7 @@ Updated: 2026-06-24 01:48 Asia/Shanghai
 | GitHub CLI `gh` is not installed | Cannot auto-open draft PR through `gh` | Plain `git` push works; PR can be opened manually or after installing `gh`. |
 | Profile contains phone/email and resume files | Public GitHub privacy risk | Excluded from Git tracking; code will support private local data and later demo-safe sample data. |
 | Qwen-Omni live API needs credentials | Live realtime cannot be verified without key | MVP starts with mock realtime; live adapter has explicit readiness checks. |
+| Qwen-Omni realtime event mapping still needs official implementation | Browser audio can reach backend, but not yet Alibaba realtime service | Adapter exposes async methods and fails visibly until `DASHSCOPE_API_KEY` and protocol mapping are wired. |
 | Competition requires online link | Deployment cannot be ignored | Public endpoint provider interface included in plan. |
 
 ## Task Completion Log
@@ -60,6 +62,7 @@ Updated: 2026-06-24 01:48 Asia/Shanghai
 | 2026-06-24 01:34 | Task 10 developer workflow | Completed | Claude implemented; Codex reviewed files and verified backend `pytest -q` -> 14 passed, frontend `npm run build` -> built successfully |
 | 2026-06-24 01:41 | Task 11 Bailian live adapter guard | Completed | Claude implemented; Codex reviewed files and verified adapter tests -> 2 passed, full backend -> 16 passed |
 | 2026-06-24 01:48 | Final MVP verification | Completed | Backend `pytest -q` -> 16 passed; frontend `npm run build` -> succeeded; browser smoke confirmed setup -> interview -> report |
+| 2026-06-24 12:34 | Phase 2 live audio skeleton | Completed | Browser `MediaRecorder` capture, backend audio events, realtime gateway, and WebSocket mock audio test added; backend `pytest -q` -> 31 passed; frontend `npm run build` -> succeeded |
 
 ## Current Frontend Shape
 
@@ -73,9 +76,9 @@ This is an engineering MVP, not final visual polish. It is ready for an external
 
 | Addition | Status | Notes |
 | --- | --- | --- |
-| Browser microphone capture | Planned | Use `MediaRecorder` first; later add `AudioWorklet` only if Qwen-Omni requires PCM/low-latency frames. |
-| Live Qwen-Omni-Realtime adapter | Planned | Keep audio understanding in Omni API; do not reintroduce Whisper/SenseVoice STT into the main path. |
-| Realtime mode switch | Planned | `mock` remains default; `bailian` requires `DASHSCOPE_API_KEY`. |
+| Browser microphone capture | Done | `MediaRecorder` sends base64 `audio.chunk` events over the existing interview WebSocket. Add `AudioWorklet` only if Qwen-Omni requires PCM/low-latency frames. |
+| Live Qwen-Omni-Realtime adapter | Partial | Async adapter methods exist and validate readiness; official realtime event mapping is still not wired. |
+| Realtime mode switch | Partial | `mock` remains default; `bailian` creates the adapter and returns visible readiness/implementation errors. |
 | Assistant audio playback | Planned | Frontend should play `assistant.audio.chunk` and show text deltas. |
 
 Phase 2 implementation plan: `docs/superpowers/plans/2026-06-24-live-audio-omni-phase2.md`.
@@ -95,11 +98,12 @@ Phase 2 implementation plan: `docs/superpowers/plans/2026-06-24-live-audio-omni-
 | Task 9: Frontend Interview Flow | Done | `npm run build` -> TypeScript and Vite production build succeeded | Codex fixed WebSocket cleanup and removed `any` from report state |
 | Task 10: Developer Script And Full Verification | Done | Backend `pytest -q` -> 14 passed; frontend `npm run build` -> succeeded | Script starts long-running dev servers only when explicitly invoked |
 | Task 11: Prepare For Bailian Live Adapter | Done | `pytest tests/test_bailian_adapter.py -q` -> 2 passed; full backend `pytest -q` -> 16 passed | Live Qwen-Omni call still requires `DASHSCOPE_API_KEY` and later adapter implementation |
+| Task 12: Live Audio Skeleton | Done | Backend `pytest -q` -> 31 passed; frontend `npm run build` -> succeeded | Browser can capture and stream mic chunks to backend mock mode; real Qwen-Omni protocol mapping and assistant audio playback remain |
 
 ## Final Verification
 
 | Command | Result |
 | --- | --- |
-| `cd services/api; .\.venv\Scripts\pytest -q` | 16 passed, 1 Starlette/httpx deprecation warning |
+| `cd services/api; .\.venv\Scripts\pytest -q` | 31 passed, 1 Starlette/httpx deprecation warning |
 | `cd apps/web; npm run build` | TypeScript compile and Vite production build succeeded |
 | Browser smoke at `http://127.0.0.1:5173` | Setup, mock WebSocket interview, tool events, and report screen worked |
