@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from app.interviewer_persona import build_interviewer_system_prompt
+
 
 @dataclass(frozen=True)
 class BailianRealtimeConfig:
@@ -11,6 +13,10 @@ class BailianRealtimeConfig:
 class BailianRealtimeAdapter:
     def __init__(self, config: BailianRealtimeConfig):
         self.config = config
+        self.system_prompt = build_interviewer_system_prompt(
+            candidate_name="豆瓣酱",
+            target_role="机械臂运控算法工程师",
+        )
 
     def validate_ready(self) -> None:
         if not self.config.api_key:

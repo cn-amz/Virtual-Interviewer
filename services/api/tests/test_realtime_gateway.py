@@ -23,9 +23,13 @@ async def test_gateway_text_input_dispatches():
     gateway = RealtimeGateway(session)
 
     events = await gateway.dispatch({"type": "text.input", "text": "hello"})
+    reply = next(e["text"] for e in events if e["type"] == "assistant.text.delta")
 
     assert any(e["type"] == "assistant.text.delta" for e in events)
     assert any(e["type"] == "transcript.item" for e in events)
+    assert reply.endswith("？")
+    assert "我会结合" not in reply
+    assert "请具体说明" not in reply
 
 
 @pytest.mark.asyncio

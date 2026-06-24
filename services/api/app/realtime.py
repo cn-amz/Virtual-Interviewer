@@ -3,6 +3,7 @@ import binascii
 from uuid import uuid4
 
 from app.interview_state import InterviewState
+from app.interviewer_persona import next_mock_interviewer_question
 from app.tool_router import create_default_tool_router
 
 
@@ -20,7 +21,7 @@ class MockRealtimeSession:
             {"type": "session.ready", "session_id": self.session_id, "mode": "mock"},
             {
                 "type": "assistant.text.delta",
-                "text": "你好，我是你的虚拟面试官。我们先从一段简短自我介绍开始。",
+                "text": next_mock_interviewer_question(self.state.stage, ""),
             },
         ]
 
@@ -29,11 +30,8 @@ class MockRealtimeSession:
         tool_result = self.tool_router.call("retrieve_profile_context", {"query": text})
         self.state.record_answer_score(3.5)
         action = self.state.next_action()
+        reply = next_mock_interviewer_question(self.state.stage, text)
         self.state.advance_if_ready()
-        reply = (
-            "我会结合你的项目继续追问。请具体说明你在机械臂运动控制中"
-            "改进了什么、为什么这样改、效果如何。"
-        )
         self.transcript.append({"speaker": "assistant", "text": reply})
         return [
             {"type": "transcript.item", "speaker": "candidate", "text": text},
