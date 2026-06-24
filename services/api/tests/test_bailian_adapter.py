@@ -112,6 +112,18 @@ async def test_connect_opens_websocket_and_updates_session():
     assert "技术面试官" in factory.socket.sent[0]["session"]["instructions"]
 
 
+def test_start_events_include_self_introduction_question():
+    adapter = BailianRealtimeAdapter(
+        BailianRealtimeConfig(api_key="sk-test", model="qwen3.5-omni-plus-realtime", url="wss://example.com")
+    )
+
+    events = adapter.start_events()
+
+    assert events[0]["type"] == "session.ready"
+    assert events[1]["type"] == "assistant.text.delta"
+    assert "自我介绍" in events[1]["text"]
+
+
 @pytest.mark.asyncio
 async def test_connect_raises_runtime_error_without_api_key():
     adapter = BailianRealtimeAdapter(
@@ -167,6 +179,11 @@ async def test_text_input_uses_local_low_cost_interviewer_path():
     assert any(event == {"type": "text.mode", "mode": "local-low-cost"} for event in events)
     assert len(factory.socket.sent) == 1
 
+    next_events = await adapter.handle_text("我负责优化轨迹稳定性。")
+    first_reply = next(event["text"] for event in events if event["type"] == "assistant.text.delta")
+    second_reply = next(event["text"] for event in next_events if event["type"] == "assistant.text.delta")
+    assert first_reply != second_reply
+
 
 @pytest.mark.asyncio
 async def test_send_audio_chunk_raises_not_implemented():
@@ -194,8 +211,8 @@ async def test_send_audio_stop_raises_not_implemented():
 
     events = await adapter.send_audio_stop()
 
-    assert events == []
-    assert factory.socket.sent[-1] == {"type": "session.finish"}
+    assert events == [{"type": "audio.stopped", "mode": "bailian"}]
+    assert factory.socket.sent == [factory.socket.sent[0]]
 
 
 @pytest.mark.asyncio

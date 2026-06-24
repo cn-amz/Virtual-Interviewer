@@ -1,6 +1,6 @@
 # Virtual Interviewer Progress Report
 
-Updated: 2026-06-24 16:40 Asia/Shanghai
+Updated: 2026-06-24 17:05 Asia/Shanghai
 
 ## Overall Completion
 
@@ -15,7 +15,7 @@ Updated: 2026-06-24 16:40 Asia/Shanghai
 | MVP implementation | Done | 100% | Tasks 1-11 complete; local mock demo smoke tested; branch ready for review. |
 | Live audio architecture skeleton | Done | 70% | Browser microphone capture, audio WebSocket events, realtime gateway, and Bailian adapter methods are in code; real Qwen-Omni protocol mapping remains. |
 | Interviewer persona guardrails | Done | 85% | Central system prompt and mock question generator now constrain the app to interviewer-style short questions; richer adaptive strategy remains. |
-| Bailian realtime integration | Partial | 80% | WebSocket protocol mapping and PCM16 frontend capture are in place; live manual audio verification remains. |
+| Bailian realtime integration | Partial | 85% | WebSocket protocol mapping, PCM16 frontend capture, and invalid stop-event fix are in place; live manual speech verification remains. |
 
 ## Current Decisions
 
@@ -107,11 +107,12 @@ Phase 2 implementation plan: `docs/superpowers/plans/2026-06-24-live-audio-omni-
 | Task 12: Live Audio Skeleton | Done | Backend `pytest -q` -> 31 passed; frontend `npm run build` -> succeeded | Browser can capture and stream mic chunks to backend mock mode; real Qwen-Omni protocol mapping and assistant audio playback remain |
 | Task 13: Interviewer Persona Guardrails | Done | Backend `pytest -q` -> 35 passed; frontend `npm run build` -> succeeded | Mock questions are still deterministic templates; later Qwen-Omni should use the same system prompt for adaptive dialogue |
 | Task 14: Bailian Text Fallback And PCM Audio | Done | Backend `pytest -q` -> 39 passed; frontend `npm run build` -> succeeded | Text mode is local low-cost; live audio still needs browser/manual verification |
+| Task 15: Adaptive Text Interviewer And Realtime Stop Fix | Done | Backend `pytest -q` -> 43 passed; frontend `npm run build` -> succeeded | Local text mode is deterministic; richer generated text mode can use a cheaper Bailian text model later |
 
 ## Final Verification
 
 | Command | Result |
 | --- | --- |
-| `cd services/api; .\.venv\Scripts\pytest -q` | 39 passed, 1 Starlette/httpx deprecation warning |
+| `cd services/api; .\.venv\Scripts\pytest -q` | 43 passed, 1 Starlette/httpx deprecation warning |
 | `cd apps/web; npm run build` | TypeScript compile and Vite production build succeeded |
 | Browser smoke at `http://127.0.0.1:5173` | Setup, mock WebSocket interview, tool events, and report screen worked |

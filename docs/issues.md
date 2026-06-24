@@ -85,3 +85,27 @@ This file records user-discovered and Codex-discovered issues that may become ma
 - Solution: Rewrote `apps/web/src/realtime/audioCapture.ts` to use `AudioContext` + `AudioWorklet`, added `apps/web/public/pcm16-capture-processor.js`, and changed audio chunks to `audio/pcm` with `sample_rate=16000`.
 - Verification: Frontend `npm run build` succeeded. Backend accepts `audio/pcm` at `16000` in adapter tests.
 - Remaining risk: Browser support and microphone permission behavior still need live manual testing on the demo machine; some browsers may ignore the requested `AudioContext` sample rate, so the worklet includes downsampling to 16 kHz.
+
+## 2026-06-24 - Alibaba Console Showed Failed Realtime Model Calls
+
+- Discovered by: User
+- Severity: High
+- Initial state: The Alibaba Cloud console showed failed model calls even though the local app could connect to the realtime WebSocket.
+- Impact: Live demo credibility was affected because backend configuration looked correct locally but the provider-side invocation still failed.
+- Diagnosis: Direct WebSocket reproduction showed `session.created` and `session.updated` succeeded, then the service returned `invalid_request_error` for event type `session.finish`. The adapter had invented `session.finish`, but Alibaba's client event reference does not define that event. Valid lifecycle events include `input_audio_buffer.append`, optional `input_audio_buffer.commit` in Manual mode, `response.create`, and WebSocket close.
+- Decision: Remove the invalid `session.finish` event. In VAD mode, stopping the local microphone should only mark local audio as stopped; the WebSocket should be closed by normal session end.
+- Solution: Changed `BailianRealtimeAdapter.send_audio_stop()` to return a local `audio.stopped` event without sending anything to Alibaba. `session.end` now closes the WebSocket through `close()`.
+- Verification: Adapter tests now assert `send_audio_stop()` sends no extra realtime event. Full backend suite passes with 43 tests.
+- Remaining risk: Real spoken audio still needs manual browser testing with microphone permission and a human utterance to confirm the full VAD response loop.
+
+## 2026-06-24 - Local Text Interviewer Asked Static Questions
+
+- Discovered by: User
+- Severity: High
+- Initial state: The local text fallback asked fixed questions, did not start with self-introduction, and did not use resume/JD context.
+- Impact: Text interview mode felt scripted instead of like a role-specific interviewer, weakening the lower-cost training path.
+- Diagnosis: `BailianRealtimeAdapter.handle_text()` always called `next_mock_interviewer_question("project_deep_dive", text)`, so it had no local interview state, no initial self-introduction question, and no resume-aware project selection.
+- Decision: Add a small local text interviewer state machine for typed mode. It should ask for self-introduction first, prefer robotics/ROS/机械臂-related resume projects, then vary follow-up questions by answer content.
+- Solution: Added `InterviewContext` and `LocalTextInterviewer`, wired `BailianRealtimeAdapter.start_events()` and `handle_text()` through it, and loaded profile/JD context in `create_realtime_session()`.
+- Verification: Tests now cover self-introduction start, robotics project preference, adaptive follow-up changes, and typed mode preserving `local-low-cost`. Full backend suite passes with 43 tests.
+- Remaining risk: This remains a deterministic local interviewer. For richer generated text interviews, the next improvement should connect typed mode to a cheaper non-realtime Bailian text model plus RAG.

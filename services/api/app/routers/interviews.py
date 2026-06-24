@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from app.ability_tree import empty_ability_tree, update_tree_from_report
 from app.config import Settings, get_settings
 from app.integrations.bailian.omni_realtime import BailianRealtimeAdapter, BailianRealtimeConfig
+from app.profile_loader import ProfileLoader
 from app.realtime import MockRealtimeSession
 from app.realtime_gateway import RealtimeGateway
 from app.reporting import generate_report
@@ -24,14 +25,43 @@ def get_storage(settings: Settings = Depends(get_settings)) -> JsonStorage:
 
 def create_realtime_session(settings: Settings):
     if settings.realtime_mode == "bailian":
+        context = load_interview_context(settings)
         return BailianRealtimeAdapter(
             BailianRealtimeConfig(
                 api_key=settings.dashscope_api_key,
                 model=settings.bailian_realtime_model,
                 url=settings.bailian_realtime_url,
+                candidate_name=context["candidate_name"],
+                target_role=context["target_role"],
+                resume_projects=context["resume_projects"],
+                resume_skills=context["resume_skills"],
             )
         )
     return MockRealtimeSession(DEFAULT_PROFILE_ID, DEFAULT_JD_ID)
+
+
+def load_interview_context(settings: Settings) -> dict:
+    try:
+        loader = ProfileLoader(settings.data_dir)
+        profile = loader.load_profile_summary(DEFAULT_PROFILE_ID)
+        jd = loader.load_job_description(DEFAULT_JD_ID)
+        return {
+            "candidate_name": profile.name,
+            "target_role": normalize_role_title(jd.title),
+            "resume_projects": tuple(profile.projects),
+            "resume_skills": tuple(profile.skills),
+        }
+    except Exception:
+        return {
+            "candidate_name": DEFAULT_PROFILE_ID,
+            "target_role": "机械臂运控算法工程师",
+            "resume_projects": ("ROS2机械臂运动控制",),
+            "resume_skills": ("ROS2", "机械臂运动控制", "轨迹规划", "插值算法"),
+        }
+
+
+def normalize_role_title(title: str) -> str:
+    return title.replace("目标岗位：", "").replace("目标岗位:", "").strip()
 
 
 @router.websocket("/realtime")

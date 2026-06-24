@@ -8,7 +8,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import websockets
 
-from app.interviewer_persona import build_interviewer_system_prompt, next_mock_interviewer_question
+from app.interviewer_persona import InterviewContext, LocalTextInterviewer, build_interviewer_system_prompt
 
 
 WebSocketConnect = Callable[..., Awaitable[Any]]
@@ -19,6 +19,10 @@ class BailianRealtimeConfig:
     api_key: str | None
     model: str
     url: str
+    candidate_name: str = "豆瓣酱"
+    target_role: str = "机械臂运控算法工程师"
+    resume_projects: tuple[str, ...] = ("ROS2机械臂运动控制",)
+    resume_skills: tuple[str, ...] = ("ROS2", "机械臂运动控制", "轨迹规划", "插值算法")
 
 
 class BailianRealtimeAdapter:
@@ -31,8 +35,16 @@ class BailianRealtimeAdapter:
         self.websocket_connect = websocket_connect or websockets.connect
         self.websocket: Any | None = None
         self.system_prompt = build_interviewer_system_prompt(
-            candidate_name="豆瓣酱",
-            target_role="机械臂运控算法工程师",
+            candidate_name=config.candidate_name,
+            target_role=config.target_role,
+        )
+        self.text_interviewer = LocalTextInterviewer(
+            InterviewContext(
+                candidate_name=config.candidate_name,
+                target_role=config.target_role,
+                resume_projects=config.resume_projects,
+                resume_skills=config.resume_skills,
+            )
         )
 
     def validate_ready(self) -> None:
@@ -72,10 +84,13 @@ class BailianRealtimeAdapter:
         )
 
     def start_events(self) -> list[dict]:
-        return [{"type": "session.ready", "mode": "bailian"}]
+        return [
+            {"type": "session.ready", "mode": "bailian"},
+            {"type": "assistant.text.delta", "text": self.text_interviewer.initial_question()},
+        ]
 
     async def handle_text(self, text: str) -> list[dict]:
-        reply = next_mock_interviewer_question("project_deep_dive", text)
+        reply = self.text_interviewer.next_question(text)
         return [
             {"type": "transcript.item", "speaker": "candidate", "text": text},
             {"type": "assistant.text.delta", "text": reply},
@@ -113,9 +128,7 @@ class BailianRealtimeAdapter:
         return []
 
     async def send_audio_stop(self) -> list[dict]:
-        if self.websocket:
-            await self._send({"type": "session.finish"})
-        return []
+        return [{"type": "audio.stopped", "mode": "bailian"}]
 
     async def receive_events(self) -> list[dict]:
         if not self.websocket:
