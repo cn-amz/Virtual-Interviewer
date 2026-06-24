@@ -1,0 +1,13 @@
+﻿12 pre-existing tests pass, 2 new tests pass. The 2 profile loader failures are pre-existing and unrelated to this task.
+
+Summary: Created the Bailian integration package structure with `BailianRealtimeConfig` and `BailianRealtimeAdapter.validate_ready()` exactly per the Task 11 plan, plus 2 tests (missing API key raises RuntimeError, valid config passes validation).
+
+Files changed:
+- `services/api/app/integrations/__init__.py` (new)
+- `services/api/app/integrations/bailian/__init__.py` (new)
+- `services/api/app/integrations/bailian/omni_realtime.py` (new)
+- `services/api/tests/test_bailian_adapter.py` (new)
+
+Verification: `pytest tests/test_bailian_adapter.py -q` → 2 passed. Full suite excluding the pre-existing profile loader failures → 12 passed.
+
+Notes/Risks: None. The profile loader test failures (`test_profile_loader.py`) are pre-existing and unrelated to this change — they stem from encoding/path resolution for the `豆瓣酱` directory name in the current shell environment.
