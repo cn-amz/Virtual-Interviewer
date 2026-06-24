@@ -1,6 +1,17 @@
+from __future__ import annotations
+
+import json
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from typing import Any
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+
+import websockets
 
 from app.interviewer_persona import build_interviewer_system_prompt
+
+
+WebSocketConnect = Callable[..., Awaitable[Any]]
 
 
 @dataclass(frozen=True)
@@ -11,8 +22,14 @@ class BailianRealtimeConfig:
 
 
 class BailianRealtimeAdapter:
-    def __init__(self, config: BailianRealtimeConfig):
+    def __init__(
+        self,
+        config: BailianRealtimeConfig,
+        websocket_connect: WebSocketConnect | None = None,
+    ):
         self.config = config
+        self.websocket_connect = websocket_connect or websockets.connect
+        self.websocket: Any | None = None
         self.system_prompt = build_interviewer_system_prompt(
             candidate_name="豆瓣酱",
             target_role="机械臂运控算法工程师",
@@ -27,25 +44,118 @@ class BailianRealtimeAdapter:
             raise RuntimeError("Bailian realtime URL must start with wss://.")
 
     async def connect(self) -> None:
-        """Validate configuration and establish live session.
-
-        Raises RuntimeError if config is incomplete.
-        Raises NotImplementedError until the live protocol mapping is wired.
-        """
         self.validate_ready()
-        raise NotImplementedError(
-            "Bailian live audio protocol mapping is not wired yet. "
-            "Qwen-Omni-Realtime event mapping requires official protocol specification."
+        self.websocket = await self.websocket_connect(
+            self._api_url(),
+            additional_headers={"Authorization": f"Bearer {self.config.api_key}"},
+        )
+        await self._send(
+            {
+                "type": "session.update",
+                "session": {
+                    "modalities": ["text", "audio"],
+                    "voice": "Tina",
+                    "input_audio_format": "pcm",
+                    "output_audio_format": "pcm",
+                    "input_audio_transcription": {
+                        "model": "qwen3-asr-flash-realtime",
+                    },
+                    "instructions": self.system_prompt,
+                    "turn_detection": {
+                        "type": "server_vad",
+                        "threshold": 0.5,
+                        "silence_duration_ms": 800,
+                    },
+                    "temperature": 0.7,
+                },
+            }
         )
 
-    async def send_audio_start(self, mime_type: str, sample_rate: int | None) -> None:
-        raise NotImplementedError("Live protocol not wired.")
+    def start_events(self) -> list[dict]:
+        return [{"type": "session.ready", "mode": "bailian"}]
 
-    async def send_audio_chunk(self, data_base64: str, mime_type: str) -> None:
-        raise NotImplementedError("Live protocol not wired.")
+    async def send_audio_start(self, mime_type: str, sample_rate: int | None) -> list[dict]:
+        if not self._is_supported_pcm(mime_type, sample_rate):
+            return [
+                {
+                    "type": "realtime.error",
+                    "message": (
+                        "Bailian Qwen-Omni-Realtime requires 16 kHz PCM audio. "
+                        f"Current browser stream is {mime_type} at {sample_rate or 'unknown'} Hz. "
+                        "Next step: switch frontend capture from MediaRecorder/webm to AudioWorklet PCM16."
+                    ),
+                }
+            ]
+        return [{"type": "audio.started", "mode": "bailian", "mime_type": mime_type, "sample_rate": sample_rate}]
 
-    async def send_audio_stop(self) -> None:
-        raise NotImplementedError("Live protocol not wired.")
+    async def send_audio_chunk(self, data_base64: str, mime_type: str) -> list[dict]:
+        if not self.websocket:
+            return [{"type": "realtime.error", "message": "Bailian realtime WebSocket is not connected."}]
+        if not self._is_pcm_mime(mime_type):
+            return [
+                {
+                    "type": "realtime.error",
+                    "message": "Bailian realtime audio chunks must be base64-encoded 16 kHz PCM.",
+                }
+            ]
+        await self._send({"type": "input_audio_buffer.append", "audio": data_base64})
+        return []
+
+    async def send_audio_stop(self) -> list[dict]:
+        if self.websocket:
+            await self._send({"type": "session.finish"})
+        return []
+
+    async def receive_events(self) -> list[dict]:
+        if not self.websocket:
+            return [{"type": "realtime.error", "message": "Bailian realtime WebSocket is not connected."}]
+        message = await self.websocket.recv()
+        return self.map_server_event(json.loads(message))
+
+    def map_server_event(self, event: dict) -> list[dict]:
+        event_type = event.get("type")
+        if event_type == "response.audio_transcript.delta":
+            return [{"type": "assistant.text.delta", "text": event.get("delta", "")}]
+        if event_type == "response.audio.delta":
+            return [{"type": "assistant.audio.chunk", "mime_type": "audio/pcm", "data": event.get("delta", "")}]
+        if event_type == "conversation.item.input_audio_transcription.delta":
+            return [
+                {
+                    "type": "transcript.partial",
+                    "speaker": "candidate",
+                    "text": f"{event.get('text', '')}{event.get('stash', '')}",
+                }
+            ]
+        if event_type == "conversation.item.input_audio_transcription.completed":
+            return [{"type": "transcript.item", "speaker": "candidate", "text": event.get("transcript", "")}]
+        if event_type == "session.finished":
+            return [{"type": "session.ended", "mode": "bailian"}]
+        if event_type == "error":
+            error = event.get("error") or {}
+            return [{"type": "realtime.error", "message": error.get("message", "Bailian realtime error.")}]
+        if event_type in {"session.created", "session.updated", "input_audio_buffer.speech_started", "input_audio_buffer.speech_stopped", "input_audio_buffer.committed", "response.created", "response.done"}:
+            return [{"type": "bailian.event", "event": event_type}]
+        return []
 
     async def close(self) -> None:
-        pass
+        if self.websocket:
+            await self.websocket.close()
+            self.websocket = None
+
+    async def _send(self, payload: dict) -> None:
+        if not self.websocket:
+            raise RuntimeError("Bailian realtime WebSocket is not connected.")
+        await self.websocket.send(json.dumps(payload, ensure_ascii=False))
+
+    def _api_url(self) -> str:
+        parsed = urlsplit(self.config.url)
+        query = dict(parse_qsl(parsed.query))
+        query["model"] = self.config.model
+        return urlunsplit((parsed.scheme, parsed.netloc, parsed.path, urlencode(query), parsed.fragment))
+
+    def _is_supported_pcm(self, mime_type: str, sample_rate: int | None) -> bool:
+        return self._is_pcm_mime(mime_type) and sample_rate == 16000
+
+    def _is_pcm_mime(self, mime_type: str) -> bool:
+        normalized = mime_type.lower()
+        return normalized in {"audio/pcm", "audio/pcm16", "audio/l16", "pcm"}

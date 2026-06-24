@@ -1,3 +1,5 @@
+import asyncio
+from contextlib import suppress
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
@@ -51,6 +53,10 @@ async def realtime_interview(
     for event in await gateway.start_events():
         await websocket.send_json(event)
 
+    relay_task = None
+    if hasattr(session, "receive_events"):
+        relay_task = asyncio.create_task(relay_realtime_events(websocket, session))
+
     try:
         while True:
             event = await websocket.receive_json()
@@ -61,6 +67,19 @@ async def realtime_interview(
                 return
     except WebSocketDisconnect:
         return
+    finally:
+        if relay_task:
+            relay_task.cancel()
+            with suppress(asyncio.CancelledError):
+                await relay_task
+        if hasattr(session, "close"):
+            await session.close()
+
+
+async def relay_realtime_events(websocket: WebSocket, session) -> None:
+    while True:
+        for event in await session.receive_events():
+            await websocket.send_json(event)
 
 
 @router.post("/mock-report")

@@ -37,3 +37,27 @@ This file records user-discovered and Codex-discovered issues that may become ma
 - Solution: Restarted the backend on `127.0.0.1:8000`; health check returned `{"status":"ok"}`. Confirmed frontend port `5173` remained active.
 - Verification: `Get-NetTCPConnection` showed Python listening on `8000` and Node/Vite listening on `5173`.
 - Remaining risk: If `REALTIME_MODE=bailian` is enabled, WebSocket interview startup may still return the adapter implementation message until the real Bailian realtime protocol is wired.
+
+## 2026-06-24 - Bailian Realtime Adapter Still Returned Protocol Mapping Placeholder
+
+- Discovered by: User
+- Severity: High
+- Initial state: With `REALTIME_MODE=bailian` and a configured `DASHSCOPE_API_KEY`, the browser received `realtime.error: Bailian live audio protocol mapping is not wired yet`.
+- Impact: The app proved configuration was reaching the backend, but live mode could not establish a usable Qwen-Omni-Realtime session.
+- Diagnosis: `BailianRealtimeAdapter.connect()` still raised `NotImplementedError`. Official Alibaba Cloud documentation requires a WebSocket URL with `?model=...`, `Authorization: Bearer DASHSCOPE_API_KEY`, a `session.update` event, `input_audio_buffer.append` for audio, and server event mapping for `response.audio_transcript.delta` / `response.audio.delta`.
+- Decision: Replace the placeholder with a minimal real WebSocket protocol adapter, while explicitly blocking unsupported browser audio formats.
+- Solution: Implemented WebSocket connection, `session.update`, `input_audio_buffer.append`, `session.finish`, server event mapping, and a backend relay task. Added `websockets` as an explicit backend dependency.
+- Verification: Backend `pytest -q` passed with 37 tests. Adapter tests verify URL construction, Bearer auth, session update payload, audio append, session finish, and server event mapping.
+- Remaining risk: Alibaba requires 16 kHz PCM input, but the frontend currently captures `audio/webm;codecs=opus` through `MediaRecorder`. Live connection should no longer fail with the mapping placeholder, but microphone audio still needs an AudioWorklet PCM16 capture path before full realtime speech works.
+
+## 2026-06-24 - Local `.env` Leaked Bailian Mode Into Tests
+
+- Discovered by: Codex
+- Severity: Medium
+- Initial state: After setting `REALTIME_MODE=bailian` in local `.env`, a mock WebSocket test unexpectedly entered the Bailian path.
+- Impact: Tests became environment-dependent and could accidentally call external services or fail differently on another machine.
+- Diagnosis: `Settings` loads `services/api/.env`, and the test suite did not isolate realtime mode from local developer configuration.
+- Decision: Force tests to run in deterministic mock mode unless a test explicitly constructs a Bailian adapter.
+- Solution: Added an autouse pytest fixture that sets `REALTIME_MODE=mock` and clears the settings cache before and after each test.
+- Verification: Full backend suite now passes with `37 passed`.
+- Remaining risk: Future integration tests that intentionally hit Bailian should opt in explicitly and be marked separately so they never run in normal offline test suites.
