@@ -58,7 +58,7 @@ def test_adapter_exposes_interviewer_system_prompt():
     )
 
     assert "技术面试官" in adapter.system_prompt
-    assert "不是通用AI助手" in adapter.system_prompt
+    assert "不是通用 AI 助手" in adapter.system_prompt
 
 
 def test_adapter_maps_bailian_server_events():

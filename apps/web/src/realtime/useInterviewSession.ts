@@ -11,6 +11,7 @@ export type RealtimeEvent = {
   action?: string;
   bytes?: number;
   mode?: string;
+  model?: string;
   message?: string;
 };
 

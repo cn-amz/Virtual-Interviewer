@@ -8,6 +8,7 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 import websockets
 
+from app.integrations.bailian.text_client import BailianTextClient, BailianTextConfig
 from app.interviewer_persona import InterviewContext, LocalTextInterviewer, build_interviewer_system_prompt
 
 
@@ -19,9 +20,12 @@ class BailianRealtimeConfig:
     api_key: str | None
     model: str
     url: str
+    text_mode: str = "local"
+    text_model: str = "qwen3.6plus"
+    text_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     candidate_name: str = "豆瓣酱"
     target_role: str = "机械臂运控算法工程师"
-    resume_projects: tuple[str, ...] = ("ROS2机械臂运动控制",)
+    resume_projects: tuple[str, ...] = ("ROS2 机械臂运动控制",)
     resume_skills: tuple[str, ...] = ("ROS2", "机械臂运动控制", "轨迹规划", "插值算法")
 
 
@@ -30,22 +34,23 @@ class BailianRealtimeAdapter:
         self,
         config: BailianRealtimeConfig,
         websocket_connect: WebSocketConnect | None = None,
+        text_client: BailianTextClient | None = None,
     ):
         self.config = config
         self.websocket_connect = websocket_connect or websockets.connect
         self.websocket: Any | None = None
+        self.context = InterviewContext(
+            candidate_name=config.candidate_name,
+            target_role=config.target_role,
+            resume_projects=config.resume_projects,
+            resume_skills=config.resume_skills,
+        )
         self.system_prompt = build_interviewer_system_prompt(
             candidate_name=config.candidate_name,
             target_role=config.target_role,
         )
-        self.text_interviewer = LocalTextInterviewer(
-            InterviewContext(
-                candidate_name=config.candidate_name,
-                target_role=config.target_role,
-                resume_projects=config.resume_projects,
-                resume_skills=config.resume_skills,
-            )
-        )
+        self.text_interviewer = LocalTextInterviewer(self.context)
+        self._text_client = text_client or self._create_text_client()
 
     def validate_ready(self) -> None:
         if not self.config.api_key:
@@ -90,6 +95,24 @@ class BailianRealtimeAdapter:
         ]
 
     async def handle_text(self, text: str) -> list[dict]:
+        if self._text_client:
+            try:
+                self._text_client.add_to_history("user", text)
+                reply = await self._text_client.next_question()
+                return [
+                    {"type": "transcript.item", "speaker": "candidate", "text": text},
+                    {"type": "assistant.text.delta", "text": reply},
+                    {"type": "text.mode", "mode": "bailian_text", "model": self.config.text_model},
+                ]
+            except Exception as exc:
+                reply = self.text_interviewer.next_question(text)
+                return [
+                    {"type": "transcript.item", "speaker": "candidate", "text": text},
+                    {"type": "realtime.error", "message": f"Bailian text call failed: {exc}"},
+                    {"type": "assistant.text.delta", "text": reply},
+                    {"type": "text.mode", "mode": "local-fallback"},
+                ]
+
         reply = self.text_interviewer.next_question(text)
         return [
             {"type": "transcript.item", "speaker": "candidate", "text": text},
@@ -107,8 +130,7 @@ class BailianRealtimeAdapter:
                     "type": "realtime.error",
                     "message": (
                         "Bailian Qwen-Omni-Realtime requires 16 kHz PCM audio. "
-                        f"Current browser stream is {mime_type} at {sample_rate or 'unknown'} Hz. "
-                        "Next step: switch frontend capture from MediaRecorder/webm to AudioWorklet PCM16."
+                        f"Current browser stream is {mime_type} at {sample_rate or 'unknown'} Hz."
                     ),
                 }
             ]
@@ -157,7 +179,15 @@ class BailianRealtimeAdapter:
         if event_type == "error":
             error = event.get("error") or {}
             return [{"type": "realtime.error", "message": error.get("message", "Bailian realtime error.")}]
-        if event_type in {"session.created", "session.updated", "input_audio_buffer.speech_started", "input_audio_buffer.speech_stopped", "input_audio_buffer.committed", "response.created", "response.done"}:
+        if event_type in {
+            "session.created",
+            "session.updated",
+            "input_audio_buffer.speech_started",
+            "input_audio_buffer.speech_stopped",
+            "input_audio_buffer.committed",
+            "response.created",
+            "response.done",
+        }:
             return [{"type": "bailian.event", "event": event_type}]
         return []
 
@@ -176,6 +206,28 @@ class BailianRealtimeAdapter:
         query = dict(parse_qsl(parsed.query))
         query["model"] = self.config.model
         return urlunsplit((parsed.scheme, parsed.netloc, parsed.path, urlencode(query), parsed.fragment))
+
+    def _create_text_client(self) -> BailianTextClient | None:
+        if self.config.text_mode != "bailian_text":
+            return None
+        return BailianTextClient(
+            BailianTextConfig(
+                api_key=self.config.api_key,
+                model=self.config.text_model,
+                base_url=self.config.text_base_url,
+            ),
+            system_prompt=self._text_system_prompt(),
+        )
+
+    def _text_system_prompt(self) -> str:
+        project_context = "；".join(self.context.resume_projects[:5]) or "暂无项目摘要"
+        skill_context = "、".join(self.context.resume_skills[:12]) or "暂无技能摘要"
+        return (
+            f"{self.system_prompt}\n\n"
+            f"候选人技能摘要：{skill_context}\n"
+            f"候选人项目摘要：{project_context}\n"
+            "你正在进行文字模拟面试。候选人每次回答后，只输出下一句面试追问。"
+        )
 
     def _is_supported_pcm(self, mime_type: str, sample_rate: int | None) -> bool:
         return self._is_pcm_mime(mime_type) and sample_rate == 16000

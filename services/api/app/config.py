@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     dashscope_api_key: str | None = Field(default=None, alias="DASHSCOPE_API_KEY")
     bailian_realtime_model: str = "qwen3.5-omni-plus-realtime"
     bailian_realtime_url: str = "wss://dashscope.aliyuncs.com/api-ws/v1/realtime"
+    text_mode: str = "local"
+    bailian_text_model: str = "qwen3.6plus"
+    bailian_text_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     realtime_mode: str = "mock"
 
     @property

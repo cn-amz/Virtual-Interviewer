@@ -10,8 +10,7 @@ ASSISTANT_STYLE_PHRASES = [
     "总结一下",
 ]
 
-SYSTEM_PROMPT_TEMPLATE = """你是一名真实的技术面试官，不是通用AI助手。
-
+SYSTEM_PROMPT_TEMPLATE = """你是一名真实的技术面试官，不是通用 AI 助手。
 候选人：{candidate_name}
 目标岗位：{target_role}
 
@@ -23,16 +22,16 @@ SYSTEM_PROMPT_TEMPLATE = """你是一名真实的技术面试官，不是通用A
 5. 语气保持真实面试官风格：简洁、具体、有压力但不冒犯。
 6. 候选人回答空泛时，追问一个可验证细节，例如指标、边界条件、具体职责或取舍依据。
 7. 除收尾复盘外，不主动给建议。
-"""
+8. 直接输出面试官下一句话，不要输出标题、列表或解释。"""
 
 STAGE_QUESTIONS = {
-    "warmup": "先做一分钟自我介绍，并点出你最匹配机械臂运控算法工程师的项目？",
+    "warmup": "先做一分钟自我介绍，并点出你最匹配机械臂运动控制算法工程师的项目。",
     "resume_overview": "这个项目里你本人负责的核心模块是什么？",
     "project_deep_dive": "你引入插值算法前后的稳定性指标分别是多少？",
     "fundamentals": "轨迹规划和底层控制之间的接口你怎么定义？",
     "pressure_followup": "如果上线后机械臂出现抖动，你第一步查哪个信号？",
     "candidate_questions": "你想反问团队的业务场景还是技术栈？",
-    "summary": "最后补充一个你认为最能证明岗位匹配度的证据？",
+    "summary": "最后补充一个你认为最能证明岗位匹配度的证据。",
 }
 
 
@@ -40,7 +39,7 @@ STAGE_QUESTIONS = {
 class InterviewContext:
     candidate_name: str = "豆瓣酱"
     target_role: str = "机械臂运控算法工程师"
-    resume_projects: tuple[str, ...] = ("ROS2机械臂运动控制",)
+    resume_projects: tuple[str, ...] = ("ROS2 机械臂运动控制",)
     resume_skills: tuple[str, ...] = ("ROS2", "机械臂运动控制", "轨迹规划", "插值算法")
 
 
@@ -52,8 +51,8 @@ class LocalTextInterviewer:
     def initial_question(self) -> str:
         project_hint = self._first_project()
         return (
-            f"我们先从自我介绍开始。请用一分钟说明你的背景，"
-            f"以及{project_hint}为什么匹配{self.context.target_role}？"
+            "我们先从自我介绍开始。请用一分钟说明你的背景，"
+            f"以及{project_hint}为什么匹配{self.context.target_role}。"
         )
 
     def next_question(self, last_answer: str) -> str:
@@ -62,9 +61,9 @@ class LocalTextInterviewer:
         if self.turn_index == 1:
             return "你刚才提到的项目里，你本人负责的核心模块和接口边界是什么？"
         if _looks_vague(answer):
-            return "这个回答还比较泛，请给出一个可量化指标或实测数据？"
+            return "这个回答还比较泛，请给出一个可量化指标或实测数据。"
         if _mentions_any(answer, ("ROS", "ROS2", "MoveIt", "Gazebo")):
-            return "ROS2节点、控制器和运动规划模块之间的数据流怎么走？"
+            return "ROS2 节点、控制器和运动规划模块之间的数据流怎么走？"
         if _mentions_any(answer, ("插值", "轨迹", "平滑", "抖动", "稳定")):
             return "轨迹平滑前后，你用哪个指标证明抖动确实下降了？"
         if _mentions_any(answer, ("标定", "视觉", "相机", "手眼")):
@@ -73,7 +72,7 @@ class LocalTextInterviewer:
             return f"简历里提到{self._first_project()}，你做过最关键的一次工程取舍是什么？"
         if self.turn_index == 3:
             return "如果实机验证失败，你会先排查通信、控制参数还是轨迹规划？"
-        return "请补充一个最能证明你岗位匹配度的工程证据？"
+        return "请补充一个最能证明你岗位匹配度的工程证据。"
 
     def _first_project(self) -> str:
         keywords = ("机器人", "机械臂", "ROS", "ROS2", "运动控制", "轨迹", "抓取", "MoveIt", "Gazebo")
@@ -88,6 +87,25 @@ def build_interviewer_system_prompt(candidate_name: str, target_role: str) -> st
         candidate_name=candidate_name,
         target_role=target_role,
     )
+
+
+def build_text_messages(context: InterviewContext, last_answer: str, turn_index: int) -> list[dict[str, str]]:
+    projects = "；".join(context.resume_projects[:5]) or "暂无项目摘要"
+    skills = "、".join(context.resume_skills[:12]) or "暂无技能摘要"
+    return [
+        {"role": "system", "content": build_interviewer_system_prompt(context.candidate_name, context.target_role)},
+        {
+            "role": "user",
+            "content": (
+                f"岗位：{context.target_role}\n"
+                f"候选人技能：{skills}\n"
+                f"候选人项目：{projects}\n"
+                f"当前轮次：{turn_index}\n"
+                f"候选人上一轮回答：{last_answer}\n"
+                "请给出面试官下一句追问。"
+            ),
+        },
+    ]
 
 
 def next_mock_interviewer_question(stage: str, last_answer: str) -> str:

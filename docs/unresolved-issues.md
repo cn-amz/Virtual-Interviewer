@@ -24,15 +24,15 @@ This file tracks only currently unresolved work. Resolved problems and their fin
 - Impact: The user may see text/event output but not hear the virtual interviewer.
 - Next action: Add an audio playback queue for `assistant.audio.chunk`, decode PCM chunks, and play through Web Audio.
 
-## 3. Text Mode Is Local, Not Cloud-Generated
+## 3. Bailian Text Model Needs Live Account Verification
 
 - Status: Open
 - Severity: Medium
 - Area: Text interview mode
-- Current state: Typed answers use a deterministic local low-cost interviewer path and do not call Qwen-Omni-Realtime.
-- Reason: Realtime Omni is designed for audio/video realtime input and is more expensive; text-only practice should remain cheaper.
-- Gap: Text mode is adaptive but not model-generated.
-- Next action: Add an optional `TEXT_MODE=local|bailian_text` setting and connect a cheaper Bailian text model with RAG when richer text-only interviews are needed.
+- Current state: `TEXT_MODE=bailian_text` routes typed answers to Alibaba DashScope OpenAI-compatible `chat/completions` with `BAILIAN_TEXT_MODEL=qwen3.6plus`. `TEXT_MODE=local` remains available for no-cost practice.
+- Gap: The code path is covered by mocked tests, but the real account still needs a browser test to confirm that `qwen3.6plus` is enabled for the user's Bailian workspace.
+- Risk: If the model name is unavailable or the account lacks permission, the backend will emit a `realtime.error` and fall back to local text interviewing.
+- Next action: Restart backend with the configured `.env`, send one typed answer, then check the page event stream and Alibaba Console. If the provider rejects the model, replace `BAILIAN_TEXT_MODEL` with an enabled Qwen text model from the console.
 
 ## 4. Resume/JD Retrieval Is Still Lightweight
 
@@ -82,4 +82,3 @@ This file tracks only currently unresolved work. Resolved problems and their fin
 - Current state: Repository is currently under a personal GitHub account.
 - Gap: Personal repositories can invite collaborators, but true teams require moving to or creating a GitHub Organization.
 - Next action: Decide whether to keep personal repo with trusted collaborators or transfer to an Organization for team-based permissions.
-

@@ -109,3 +109,15 @@ This file records user-discovered and Codex-discovered issues that may become ma
 - Solution: Added `InterviewContext` and `LocalTextInterviewer`, wired `BailianRealtimeAdapter.start_events()` and `handle_text()` through it, and loaded profile/JD context in `create_realtime_session()`.
 - Verification: Tests now cover self-introduction start, robotics project preference, adaptive follow-up changes, and typed mode preserving `local-low-cost`. Full backend suite passes with 43 tests.
 - Remaining risk: This remains a deterministic local interviewer. For richer generated text interviews, the next improvement should connect typed mode to a cheaper non-realtime Bailian text model plus RAG.
+
+## 2026-06-30 - Typed Text Was Not Sent To Bailian Text Model
+
+- Discovered by: User
+- Severity: High
+- Initial state: The user expected text typed in the interview page to reach an Alibaba model, but Alibaba Console did not show successful model calls.
+- Impact: It was hard to verify cloud model integration without using microphone realtime audio, and the text interview still felt too local/static for practical testing.
+- Diagnosis: `BailianRealtimeAdapter.handle_text()` intentionally used the local low-cost interviewer path and did not call Qwen-Omni-Realtime. This was correct for cost control, but no separate cloud text path existed.
+- Decision: Keep realtime audio on Qwen-Omni-Realtime, and add a separate text path through Alibaba DashScope OpenAI-compatible `chat/completions` using `TEXT_MODE=bailian_text` and `BAILIAN_TEXT_MODEL=qwen3.6plus`.
+- Solution: Added `BailianTextClient`, wired typed answers in Bailian mode to the text client when `TEXT_MODE=bailian_text`, preserved local fallback on cloud errors, added config entries, and fixed mojibake Chinese strings in the interviewer persona, route defaults, mock report, and frontend microphone errors.
+- Verification: Added mocked HTTP tests proving text mode posts to `/chat/completions`, uses `qwen3.6plus`, records history, falls back locally on cloud errors, and keeps text mode usable even if realtime audio connection fails. Backend `pytest -q` passed with 52 tests. Frontend `npm run build` passed.
+- Remaining risk: The exact `qwen3.6plus` model name and account permission must be validated against the user's Bailian account with the real API key. If Alibaba returns model-not-found or permission errors, set `BAILIAN_TEXT_MODEL` to the enabled Qwen text model shown in the console.

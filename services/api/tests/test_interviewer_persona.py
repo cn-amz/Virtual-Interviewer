@@ -14,7 +14,7 @@ def test_system_prompt_restricts_assistant_style_and_teaching():
     )
 
     assert "技术面试官" in prompt
-    assert "不是通用AI助手" in prompt
+    assert "不是通用 AI 助手" in prompt
     assert "不要解释概念" in prompt
     assert "每轮只问一个问题" in prompt
     assert "机械臂运控算法工程师" in prompt
@@ -37,7 +37,7 @@ def test_mock_interviewer_question_changes_by_stage():
     pressure = next_mock_interviewer_question(stage="pressure_followup", last_answer="项目上线后抖动变大。")
 
     assert warmup != pressure
-    assert warmup.endswith("？")
+    assert warmup.endswith("。")
     assert pressure.endswith("？")
 
 
@@ -55,7 +55,7 @@ def test_local_text_interviewer_starts_with_self_introduction():
 
     assert "自我介绍" in question
     assert "机械臂运控算法工程师" in question
-    assert question.endswith("？")
+    assert question.endswith("。")
 
 
 def test_local_text_interviewer_prefers_robotics_resume_project():

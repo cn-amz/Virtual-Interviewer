@@ -65,6 +65,7 @@ Updated: 2026-06-24 17:05 Asia/Shanghai
 | 2026-06-24 01:41 | Task 11 Bailian live adapter guard | Completed | Claude implemented; Codex reviewed files and verified adapter tests -> 2 passed, full backend -> 16 passed |
 | 2026-06-24 01:48 | Final MVP verification | Completed | Backend `pytest -q` -> 16 passed; frontend `npm run build` -> succeeded; browser smoke confirmed setup -> interview -> report |
 | 2026-06-24 12:34 | Phase 2 live audio skeleton | Completed | Browser `MediaRecorder` capture, backend audio events, realtime gateway, and WebSocket mock audio test added; backend `pytest -q` -> 31 passed; frontend `npm run build` -> succeeded |
+| 2026-06-30 | Bailian text mode and UTF-8 cleanup | Completed | Added `TEXT_MODE=bailian_text` through DashScope OpenAI-compatible chat completions with `qwen3.6plus`, preserved local fallback, fixed mojibake strings; backend `pytest -q` -> 52 passed; frontend `npm run build` -> succeeded |
 | 2026-06-24 16:06 | Interviewer persona guardrails | Completed | Added central persona prompt, mock interviewer questions, and tests preventing assistant-style wording; backend `pytest -q` -> 35 passed; frontend `npm run build` -> succeeded |
 
 ## Current Frontend Shape

@@ -31,6 +31,9 @@ def create_realtime_session(settings: Settings):
                 api_key=settings.dashscope_api_key,
                 model=settings.bailian_realtime_model,
                 url=settings.bailian_realtime_url,
+                text_mode=settings.text_mode,
+                text_model=settings.bailian_text_model,
+                text_base_url=settings.bailian_text_base_url,
                 candidate_name=context["candidate_name"],
                 target_role=context["target_role"],
                 resume_projects=context["resume_projects"],
@@ -55,7 +58,7 @@ def load_interview_context(settings: Settings) -> dict:
         return {
             "candidate_name": DEFAULT_PROFILE_ID,
             "target_role": "机械臂运控算法工程师",
-            "resume_projects": ("ROS2机械臂运动控制",),
+            "resume_projects": ("ROS2 机械臂运动控制",),
             "resume_skills": ("ROS2", "机械臂运动控制", "轨迹规划", "插值算法"),
         }
 
@@ -65,26 +68,27 @@ def normalize_role_title(title: str) -> str:
 
 
 @router.websocket("/realtime")
-async def realtime_interview(
-    websocket: WebSocket, settings: Settings = Depends(get_settings)
-):
+async def realtime_interview(websocket: WebSocket, settings: Settings = Depends(get_settings)):
     await websocket.accept()
 
     session = create_realtime_session(settings)
+    realtime_connected = False
     if settings.realtime_mode == "bailian":
         try:
             await session.connect()
+            realtime_connected = True
         except (RuntimeError, NotImplementedError) as exc:
             await websocket.send_json({"type": "realtime.error", "message": str(exc)})
-            await websocket.close()
-            return
+            if settings.text_mode != "bailian_text":
+                await websocket.close()
+                return
 
     gateway = RealtimeGateway(session)
     for event in await gateway.start_events():
         await websocket.send_json(event)
 
     relay_task = None
-    if hasattr(session, "receive_events"):
+    if realtime_connected and hasattr(session, "receive_events"):
         relay_task = asyncio.create_task(relay_realtime_events(websocket, session))
 
     try:
@@ -119,7 +123,7 @@ def create_mock_report(storage: JsonStorage = Depends(get_storage)) -> dict:
         {"speaker": "assistant", "text": "请介绍机械臂项目。"},
         {
             "speaker": "candidate",
-            "text": "我通过ROS2完成机械臂运动控制，并引入插值算法提升稳定性。",
+            "text": "我通过 ROS2 完成机械臂运动控制，并引入插值算法提升稳定性。",
         },
     ]
     report = generate_report(DEFAULT_PROFILE_ID, interview_id, transcript)
