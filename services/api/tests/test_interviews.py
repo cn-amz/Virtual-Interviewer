@@ -65,7 +65,7 @@ def test_bailian_text_mode_continues_when_realtime_connect_fails(monkeypatch):
             return [
                 {"type": "transcript.item", "speaker": "candidate", "text": text},
                 {"type": "assistant.text.delta", "text": "你本人负责哪个模块？"},
-                {"type": "text.mode", "mode": "bailian_text", "model": "qwen3.6plus"},
+                {"type": "text.mode", "mode": "bailian_text", "model": "qwen3.6-plus"},
             ]
 
         async def close(self):
@@ -90,4 +90,4 @@ def test_bailian_text_mode_continues_when_realtime_connect_fails(monkeypatch):
     assert ready == {"type": "session.ready", "mode": "bailian"}
     assert transcript["type"] == "transcript.item"
     assert reply == {"type": "assistant.text.delta", "text": "你本人负责哪个模块？"}
-    assert mode == {"type": "text.mode", "mode": "bailian_text", "model": "qwen3.6plus"}
+    assert mode == {"type": "text.mode", "mode": "bailian_text", "model": "qwen3.6-plus"}

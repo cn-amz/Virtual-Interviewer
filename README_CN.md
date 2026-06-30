@@ -55,7 +55,7 @@ REALTIME_MODE=bailian
 BAILIAN_REALTIME_MODEL=qwen3.5-omni-plus-realtime
 BAILIAN_REALTIME_URL=wss://dashscope.aliyuncs.com/api-ws/v1/realtime
 TEXT_MODE=bailian_text
-BAILIAN_TEXT_MODEL=qwen3.6plus
+BAILIAN_TEXT_MODEL=qwen3.6-plus
 BAILIAN_TEXT_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 ```
 
@@ -65,7 +65,7 @@ BAILIAN_TEXT_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 - `REALTIME_MODE=mock`：离线开发模式，不调用阿里模型。
 - `TEXT_MODE=bailian_text`：文本框输入会调用百炼文本模型。
 - `TEXT_MODE=local`：文本框输入只走本地低成本面试官，不产生文本模型费用。
-- 如果 `qwen3.6plus` 在你的百炼账号中不可用，请把 `BAILIAN_TEXT_MODEL` 改成控制台中已开通的 Qwen 文本模型。
+- 如果 `qwen3.6-plus` 在你的百炼账号中不可用，请把 `BAILIAN_TEXT_MODEL` 改成控制台中已开通的 Qwen 文本模型。
 
 启动后端：
 
@@ -187,7 +187,7 @@ cd <project-root>\services\api
 
 ```env
 TEXT_MODE=bailian_text
-BAILIAN_TEXT_MODEL=qwen3.6plus
+BAILIAN_TEXT_MODEL=qwen3.6-plus
 ```
 
 然后重启后端。如果页面出现 `Bailian text call failed`，优先检查模型名是否在你的百炼账号中可用。

@@ -13,7 +13,7 @@ HttpPost = Callable[..., Awaitable[Any]]
 @dataclass(frozen=True)
 class BailianTextConfig:
     api_key: str | None
-    model: str = "qwen3.6plus"
+    model: str = "qwen3.6-plus"
     base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
 
 

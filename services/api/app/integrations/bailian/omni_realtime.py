@@ -21,7 +21,7 @@ class BailianRealtimeConfig:
     model: str
     url: str
     text_mode: str = "local"
-    text_model: str = "qwen3.6plus"
+    text_model: str = "qwen3.6-plus"
     text_base_url: str = "https://dashscope.aliyuncs.com/compatible-mode/v1"
     candidate_name: str = "豆瓣酱"
     target_role: str = "机械臂运控算法工程师"

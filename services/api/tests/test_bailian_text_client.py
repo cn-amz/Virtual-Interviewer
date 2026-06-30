@@ -25,7 +25,7 @@ async def test_text_client_posts_to_chat_completions():
     async def fake_post(url, **kwargs):
         assert url.endswith("/chat/completions")
         assert kwargs["headers"]["Authorization"] == "Bearer sk-test"
-        assert kwargs["json"]["model"] == "qwen3.6plus"
+        assert kwargs["json"]["model"] == "qwen3.6-plus"
         messages = kwargs["json"]["messages"]
         assert messages[0] == {"role": "system", "content": "你是技术面试官。"}
         assert messages[1] == {"role": "user", "content": "我做 ROS 项目。"}
@@ -109,7 +109,7 @@ async def test_adapter_handle_text_uses_cloud_when_text_mode_bailian():
 
     assert events[0] == {"type": "transcript.item", "speaker": "candidate", "text": "我负责 ROS2 运动控制。"}
     assert events[1] == {"type": "assistant.text.delta", "text": "这个项目里你本人负责什么？"}
-    assert events[2] == {"type": "text.mode", "mode": "bailian_text", "model": "qwen3.6plus"}
+    assert events[2] == {"type": "text.mode", "mode": "bailian_text", "model": "qwen3.6-plus"}
 
 
 @pytest.mark.asyncio
