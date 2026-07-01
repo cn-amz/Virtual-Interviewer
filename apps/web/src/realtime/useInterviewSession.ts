@@ -71,7 +71,11 @@ export function useInterviewSession() {
 
   function startMicrophone() {
     if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
-      setMicError("请先连接面试官。");
+      setMicError("请先连接面试官，再开启麦克风。");
+      setEvents((prev) => [
+        ...prev,
+        { type: "audio.error", message: "请先连接面试官，再开启麦克风。" },
+      ]);
       return;
     }
     if (captureRef.current) {
@@ -104,10 +108,17 @@ export function useInterviewSession() {
           });
         }
       })
-      .catch(() => {
+      .catch((error: unknown) => {
         const state = capture.getState();
+        const errorMessage =
+          state.error ??
+          (error instanceof Error ? error.message : "麦克风启动失败。");
         setMicStatus(state.status);
-        setMicError(state.error ?? "麦克风启动失败。");
+        setMicError(errorMessage);
+        setEvents((prev) => [
+          ...prev,
+          { type: "audio.error", message: errorMessage },
+        ]);
         captureRef.current = null;
       });
   }

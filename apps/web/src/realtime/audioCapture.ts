@@ -40,6 +40,10 @@ export function createAudioCapture(onChunk: ChunkCallback) {
         throw new Error("当前浏览器不支持 AudioWorklet，无法采集 16 kHz PCM 音频。");
       }
 
+      if (!navigator.mediaDevices?.getUserMedia) {
+        throw new Error("当前浏览器不支持麦克风访问。");
+      }
+
       mediaStream = await navigator.mediaDevices.getUserMedia({
         audio: {
           channelCount: 1,
@@ -77,11 +81,15 @@ export function createAudioCapture(onChunk: ChunkCallback) {
       };
     } catch (error) {
       await cleanup();
-      state = {
-        status: "error",
-        error: error instanceof Error ? error.message : "无法启动麦克风。",
-      };
-      throw error;
+      let message: string;
+      if (error instanceof DOMException && error.name === "NotAllowedError") {
+        message =
+          "麦克风权限被拒绝。请在浏览器地址栏或系统隐私设置中允许此站点访问麦克风，然后重新点击开始麦克风。";
+      } else {
+        message = error instanceof Error ? error.message : "无法启动麦克风。";
+      }
+      state = { status: "error", error: message };
+      throw new Error(message);
     }
   }
 

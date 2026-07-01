@@ -169,3 +169,14 @@ This file records user-discovered and Codex-discovered issues that may become ma
 - Solution: Updated `useInterviewSession.sendText()` to return send status from `sendJson()` and append `{"type":"client.pending","message":"已发送文字回答，等待模型回复..."}` on success. Also cleaned remaining microphone error mojibake in the same hook.
 - Verification: Frontend `npm run build` passed. Backend `pytest -q` still passed with 61 tests.
 - Remaining risk: This is event-stream feedback only. A later UI pass can add button-level loading state, timeout warnings, and latency metrics.
+
+## 2026-07-01 - Microphone Permission Denied In In-App Browser
+
+- Discovered by: User
+- Severity: Medium
+- Initial state: After connecting the interview WebSocket, clicking "开始麦克风" showed `micStatus: error` with the raw DOMException message `Permission denied` instead of clear Chinese guidance.
+- Impact: Users in in-app browsers (WeChat, DingTalk, etc.) or browsers with blocked permissions could not understand why the microphone failed or how to fix it.
+- Root cause: `audioCapture.ts` passed raw `DOMException.message` through to the error state without detecting `NotAllowedError` or providing actionable Chinese guidance. `useInterviewSession.ts` did not emit visible `audio.error` events for WebSocket-not-ready or capture-start failures.
+- Solution: Normalize `NotAllowedError` DOMException into Chinese guidance text. Handle missing `navigator.mediaDevices.getUserMedia` with a clear Chinese message. Emit `audio.error` events when mic is started before WebSocket is open and when capture.start() fails. Add a visible connection hint near mic controls in `InterviewPage.tsx`.
+- Verification: Frontend `npm run build` passed. In the in-app browser, the disconnected interview page now shows `请先连接面试官，再开启麦克风。`; after connecting and clicking `开始麦克风`, the cached permission denial now displays the Chinese guidance message and appends an `audio.error` event.
+- Remaining risk: A successful real microphone capture still needs manual testing after the user grants browser/system microphone permission.

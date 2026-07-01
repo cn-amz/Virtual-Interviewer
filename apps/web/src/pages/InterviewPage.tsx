@@ -69,6 +69,9 @@ export function InterviewPage({ onFinish }: InterviewPageProps) {
                 : "错误"}
           </p>
         )}
+        {!connected && (
+          <p className="mic-status mic-status--hint">请先连接面试官，再开启麦克风。</p>
+        )}
         {micError && <p className="mic-error">{micError}</p>}
         <textarea value={answer} onChange={(event) => setAnswer(event.target.value)} />
       </div>
