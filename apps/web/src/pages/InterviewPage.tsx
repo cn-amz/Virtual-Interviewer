@@ -17,7 +17,9 @@ export function InterviewPage({ onFinish }: InterviewPageProps) {
     startMicrophone,
     stopMicrophone,
   } = useInterviewSession();
-  const [answer, setAnswer] = useState("我通过ROS2完成机械臂运动控制，并引入插值算法提升稳定性。");
+  const [answer, setAnswer] = useState(
+    "我通过 ROS2 完成机械臂运动控制，并引入插值算法提升轨迹稳定性。"
+  );
 
   const micLabel =
     micStatus === "recording"
@@ -40,8 +42,12 @@ export function InterviewPage({ onFinish }: InterviewPageProps) {
         <h1>虚拟面试官</h1>
         <p>连接状态：{connected ? "已连接" : "未连接"}</p>
         <div className="button-row">
-          <button className="primary-button" onClick={start}>连接面试官</button>
-          <button className="secondary-button" onClick={() => sendText(answer)}>发送模拟回答</button>
+          <button className="primary-button" onClick={start}>
+            连接面试官
+          </button>
+          <button className="secondary-button" onClick={() => sendText(answer)}>
+            发送模拟回答
+          </button>
           <button
             className={isMicActive ? "mic-active-button" : "secondary-button"}
             disabled={micStatus === "requesting" || !connected}
@@ -49,7 +55,9 @@ export function InterviewPage({ onFinish }: InterviewPageProps) {
           >
             {micLabel}
           </button>
-          <button className="secondary-button" onClick={finishInterview}>结束并生成报告</button>
+          <button className="secondary-button" onClick={finishInterview}>
+            结束并生成报告
+          </button>
         </div>
         {micStatus !== "idle" && (
           <p className={`mic-status mic-status--${micStatus}`}>

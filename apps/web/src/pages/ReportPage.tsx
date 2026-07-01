@@ -1,23 +1,40 @@
 import { useEffect, useState } from "react";
 import { createMockReport, type MockReportResponse } from "../api/client";
 
+type ReportPageProps = {
+  onBack: () => void;
+};
+
 type ReportState = MockReportResponse | { error: string } | null;
 
-export function ReportPage() {
+export function ReportPage({ onBack }: ReportPageProps) {
   const [report, setReport] = useState<ReportState>(null);
 
   useEffect(() => {
-    createMockReport().then(setReport).catch((error) => {
-      setReport({ error: String(error) });
-    });
+    createMockReport()
+      .then(setReport)
+      .catch((error) => {
+        setReport({ error: String(error) });
+      });
   }, []);
 
   if (!report) {
-    return <section className="panel">报告生成中...</section>;
+    return (
+      <section className="panel">
+        <p>报告生成中...</p>
+      </section>
+    );
   }
 
   if ("error" in report) {
-    return <section className="panel">报告生成失败：{report.error}</section>;
+    return (
+      <section className="panel">
+        <p>报告生成失败：{report.error}</p>
+        <button className="secondary-button" onClick={onBack}>
+          返回工作台
+        </button>
+      </section>
+    );
   }
 
   return (
@@ -38,6 +55,9 @@ export function ReportPage() {
           <li key={skill}>{skill}</li>
         ))}
       </ul>
+      <button className="secondary-button" onClick={onBack}>
+        返回工作台
+      </button>
     </section>
   );
 }

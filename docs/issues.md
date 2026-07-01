@@ -133,3 +133,27 @@ This file records user-discovered and Codex-discovered issues that may become ma
 - Solution: Updated defaults, local `.env`, docs, and tests to use `BAILIAN_TEXT_MODEL=qwen3.6-plus`.
 - Verification: After backend restart, a direct local WebSocket probe returned a model-generated interviewer follow-up and `{"type":"text.mode","mode":"bailian_text","model":"qwen3.6-plus"}`. Backend `pytest -q` passed with 52 tests. Frontend `npm run build` passed.
 - Remaining risk: The user should refresh the browser and run one UI text test to confirm the frontend path shows the same `bailian_text` mode.
+
+## 2026-07-01 - Frontend Token Restore Stayed On Login Screen
+
+- Discovered by: Codex
+- Severity: Medium
+- Initial state: Claude Code implemented the first frontend login slice with `localStorage` token restoration. `/api/auth/me` could return a valid user, but `App` only set `user` and did not move the screen to `dashboard`.
+- Impact: Returning users with a valid token could still see the login screen instead of the post-login dashboard.
+- Diagnosis: The app state uses a local `screen` enum instead of a router. Restoring `user` was not sufficient; the screen state also had to be set explicitly.
+- Decision: Keep the current no-router approach for this phase and make token restore set both `user` and `screen`.
+- Solution: Rewrote `apps/web/src/App.tsx` so a valid token calls `setUser(currentUser)` and `setScreen("dashboard")`; invalid tokens clear the user and keep the login view.
+- Verification: Frontend `npm run build` passed.
+- Remaining risk: A future router migration should replace manual screen state with route guards.
+
+## 2026-07-01 - Frontend Phase-Two Pages Still Contained Mojibake
+
+- Discovered by: Codex
+- Severity: Medium
+- Initial state: Several touched frontend pages still contained corrupted Chinese strings after Claude Code's first-pass implementation.
+- Impact: The login, dashboard, setup, interview, ability-tree, and report pages were usable technically but not acceptable for a competition-facing demo.
+- Diagnosis: Existing files had historical encoding corruption, and new edits preserved or copied those strings.
+- Decision: Rewrite the touched UI files with clean UTF-8 Chinese rather than trying to patch corrupted byte sequences line-by-line.
+- Solution: Rebuilt `LoginPage`, `DashboardPage`, `AbilityTreePage`, `SetupPage`, `InterviewPage`, `ReportPage`, `App`, and the relevant client error string with clean text.
+- Verification: `rg` scan over touched frontend/auth files found no mojibake patterns. Frontend `npm run build` passed.
+- Remaining risk: Older docs and non-touched backend files may still contain historical mojibake and should be cleaned opportunistically when they are next edited.

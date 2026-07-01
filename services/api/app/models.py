@@ -19,3 +19,20 @@ class SessionProfile(BaseModel):
     job_description: JobDescription
     prompt: str
     qa_bank: str
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+class UserPublic(BaseModel):
+    user_id: str
+    username: str
+    display_name: str
+
+
+class LoginResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: UserPublic

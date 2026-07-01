@@ -66,6 +66,7 @@ Updated: 2026-06-24 17:05 Asia/Shanghai
 | 2026-06-24 01:48 | Final MVP verification | Completed | Backend `pytest -q` -> 16 passed; frontend `npm run build` -> succeeded; browser smoke confirmed setup -> interview -> report |
 | 2026-06-24 12:34 | Phase 2 live audio skeleton | Completed | Browser `MediaRecorder` capture, backend audio events, realtime gateway, and WebSocket mock audio test added; backend `pytest -q` -> 31 passed; frontend `npm run build` -> succeeded |
 | 2026-06-30 | Bailian text mode and UTF-8 cleanup | Completed | Added `TEXT_MODE=bailian_text` through DashScope OpenAI-compatible chat completions with `qwen3.6-plus`, preserved local fallback, fixed mojibake strings; backend `pytest -q` -> 52 passed; frontend `npm run build` -> succeeded; direct local WebSocket probe returned cloud text output |
+| 2026-07-01 | Phase 2 login and dashboard slice | Completed | Added demo login, bearer session APIs, local token restore, dashboard entry, ability-tree placeholder, and user-owned mock report output; backend `pytest -q` -> 61 passed; frontend `npm run build` -> succeeded |
 | 2026-06-24 16:06 | Interviewer persona guardrails | Completed | Added central persona prompt, mock interviewer questions, and tests preventing assistant-style wording; backend `pytest -q` -> 35 passed; frontend `npm run build` -> succeeded |
 
 ## Current Frontend Shape

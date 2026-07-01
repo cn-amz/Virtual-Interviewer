@@ -5,6 +5,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 
 from app.ability_tree import empty_ability_tree, update_tree_from_report
+from app.auth import get_optional_current_user
 from app.config import Settings, get_settings
 from app.integrations.bailian.omni_realtime import BailianRealtimeAdapter, BailianRealtimeConfig
 from app.profile_loader import ProfileLoader
@@ -117,7 +118,11 @@ async def relay_realtime_events(websocket: WebSocket, session) -> None:
 
 
 @router.post("/mock-report")
-def create_mock_report(storage: JsonStorage = Depends(get_storage)) -> dict:
+def create_mock_report(
+    storage: JsonStorage = Depends(get_storage),
+    current_user: dict | None = Depends(get_optional_current_user),
+) -> dict:
+    user_id = current_user["user_id"] if current_user else DEFAULT_PROFILE_ID
     interview_id = f"int_{uuid4().hex[:10]}"
     transcript = [
         {"speaker": "assistant", "text": "请介绍机械臂项目。"},
@@ -126,8 +131,8 @@ def create_mock_report(storage: JsonStorage = Depends(get_storage)) -> dict:
             "text": "我通过 ROS2 完成机械臂运动控制，并引入插值算法提升稳定性。",
         },
     ]
-    report = generate_report(DEFAULT_PROFILE_ID, interview_id, transcript)
-    tree = update_tree_from_report(empty_ability_tree(DEFAULT_PROFILE_ID), report)
+    report = generate_report(user_id, interview_id, transcript)
+    tree = update_tree_from_report(empty_ability_tree(user_id), report)
     storage.write_interview(interview_id, {"report": report, "ability_tree": tree})
-    storage.write_ability_tree(DEFAULT_PROFILE_ID, tree)
+    storage.write_ability_tree(user_id, tree)
     return {"interview_id": interview_id, "report": report, "ability_tree": tree}

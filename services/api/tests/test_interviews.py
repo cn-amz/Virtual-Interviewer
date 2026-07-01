@@ -14,6 +14,30 @@ def test_create_mock_report_returns_report_and_tree():
     assert payload["interview_id"].startswith("int_")
     assert payload["report"]["user_id"] == "豆瓣酱"
     assert payload["ability_tree"]["user_id"] == "豆瓣酱"
+    assert payload["report"]["summary"] == "本次面试完成了机械臂运控方向的模拟问答。"
+
+
+def test_create_mock_report_uses_authenticated_user(tmp_path, monkeypatch):
+    monkeypatch.setenv("APP_STORAGE_DIR", str(tmp_path))
+    get_settings.cache_clear()
+    client = TestClient(create_app())
+    login = client.post("/api/auth/login", json={"username": "demo", "password": "demo123456"})
+    token = login.json()["access_token"]
+
+    response = client.post("/api/interviews/mock-report", headers={"Authorization": f"Bearer {token}"})
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["report"]["user_id"] == "demo"
+    assert payload["ability_tree"]["user_id"] == "demo"
+
+
+def test_create_mock_report_rejects_invalid_token():
+    client = TestClient(create_app())
+
+    response = client.post("/api/interviews/mock-report", headers={"Authorization": "Bearer invalid"})
+
+    assert response.status_code == 401
 
 
 def test_realtime_websocket_accepts_mock_audio_events():

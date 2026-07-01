@@ -16,6 +16,8 @@ data/profiles/*
 !data/profiles/.gitkeep
 data/interviews/
 data/ability_graphs/
+data/users/
+data/sessions/
 
 # Large or sensitive local artifacts
 *.pyc
