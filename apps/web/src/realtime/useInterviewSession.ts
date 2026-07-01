@@ -49,14 +49,24 @@ export function useInterviewSession() {
     };
   }
 
-  function sendJson(payload: unknown) {
-    if (socketRef.current?.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify(payload));
+  function sendJson(payload: unknown): boolean {
+    if (socketRef.current?.readyState !== WebSocket.OPEN) {
+      return false;
     }
+    socketRef.current.send(JSON.stringify(payload));
+    return true;
   }
 
   function sendText(text: string) {
-    sendJson({ type: "text.input", text });
+    if (sendJson({ type: "text.input", text })) {
+      setEvents((prev) => [
+        ...prev,
+        {
+          type: "client.pending",
+          message: "已发送文字回答，等待模型回复...",
+        },
+      ]);
+    }
   }
 
   function startMicrophone() {

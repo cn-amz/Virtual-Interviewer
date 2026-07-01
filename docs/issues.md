@@ -157,3 +157,15 @@ This file records user-discovered and Codex-discovered issues that may become ma
 - Solution: Rebuilt `LoginPage`, `DashboardPage`, `AbilityTreePage`, `SetupPage`, `InterviewPage`, `ReportPage`, `App`, and the relevant client error string with clean text.
 - Verification: `rg` scan over touched frontend/auth files found no mojibake patterns. Frontend `npm run build` passed.
 - Remaining risk: Older docs and non-touched backend files may still contain historical mojibake and should be cleaned opportunistically when they are next edited.
+
+## 2026-07-01 - Text Answer Had No Waiting Feedback
+
+- Discovered by: User
+- Severity: Medium
+- Initial state: When the user submitted a typed answer, the UI showed no immediate feedback while the Bailian text model was thinking.
+- Impact: Users could not tell whether the app was stuck, the network was slow, or the model was generating a response.
+- Diagnosis: `sendText()` sent the WebSocket event but did not add any local pending state or event to the visible event stream. Cloud text generation can take noticeable time, so silence looked like a freeze.
+- Decision: Use the smallest visible feedback mechanism already supported by the page: append a local `client.pending` event immediately after a text answer is successfully sent.
+- Solution: Updated `useInterviewSession.sendText()` to return send status from `sendJson()` and append `{"type":"client.pending","message":"已发送文字回答，等待模型回复..."}` on success. Also cleaned remaining microphone error mojibake in the same hook.
+- Verification: Frontend `npm run build` passed. Backend `pytest -q` still passed with 61 tests.
+- Remaining risk: This is event-stream feedback only. A later UI pass can add button-level loading state, timeout warnings, and latency metrics.
