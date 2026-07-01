@@ -79,9 +79,7 @@ def get_current_user(
     auth_service: AuthService = Depends(get_auth_service),
     authorization: str | None = Header(None),
 ) -> dict:
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
-    token = authorization.removeprefix("Bearer ")
+    token = _require_bearer_token(authorization)
     user = auth_service.get_user_by_token(token)
     if user is None:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
@@ -94,9 +92,13 @@ def get_optional_current_user(
 ) -> dict | None:
     if not authorization:
         return None
-    if not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
-    user = auth_service.get_user_by_token(authorization.removeprefix("Bearer "))
+    user = auth_service.get_user_by_token(_require_bearer_token(authorization))
     if user is None:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
     return user
+
+
+def _require_bearer_token(authorization: str | None) -> str:
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
+    return authorization.removeprefix("Bearer ")
