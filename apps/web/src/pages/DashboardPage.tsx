@@ -48,7 +48,7 @@ export function DashboardPage({ user, onNavigate, onLogout }: DashboardPageProps
     <section className="panel dashboard-panel">
       <div className="dashboard-header">
         <div>
-          <p className="eyebrow">Dashboard</p>
+          <p className="eyebrow">训练工作台</p>
           <h1>你好，{user.display_name}</h1>
           <p>从这里选择训练路径，而不是直接进入面试。</p>
         </div>

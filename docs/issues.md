@@ -192,3 +192,14 @@ This file records user-discovered and Codex-discovered issues that may become ma
 - Proposed solution: Implement the Manual mode path first because it matches the existing `开始麦克风`/`停止麦克风` UI and gives predictable spoken-answer replies. Track full-duplex continuous VAD as a later architecture slice.
 - Verification: Pending. Need add adapter tests for `audio.stop` sending commit/create in Manual mode, then run a live browser speech test and confirm `response.created`, `response.audio_transcript.delta` or `response.audio.delta`, and `response.done` appear after stopping the microphone.
 - References: Alibaba Realtime docs state that VAD mode auto-commits and auto-responds after speech stop, while Manual mode requires `input_audio_buffer.commit` and `response.create`.
+
+## 2026-07-03 - Partial Transcript Cards Repeated In Frontend Event Stream
+
+- Discovered by: User
+- Severity: Medium
+- Initial state: During microphone input, every `transcript.partial` event was rendered as a new card, so the event stream showed many near-duplicate candidate utterances while ASR was still updating the same sentence. Several UI section eyebrow labels also remained in English, such as `Realtime Interview`, `Dashboard`, and `Ability Tree`.
+- Impact: The interview page looked noisy and hard to read, especially during live speech. English labels made the competition demo feel unfinished for a Chinese audience.
+- Root cause: `useInterviewSession.ts` appended every WebSocket event with `setEvents((prev) => [...prev, event])`. Streaming ASR partials are incremental updates, not separate final transcript items. `InterviewPage.tsx` also rendered raw event type strings directly.
+- Solution: Add `appendRealtimeEvent()` so consecutive `transcript.partial` events update the latest partial card, and a final candidate `transcript.item` replaces the latest partial. Localize event labels and page eyebrow labels to Chinese.
+- Verification: Added Vitest coverage for partial transcript replacement and final transcript replacement. Frontend `npm run test` passed with 2 tests. Frontend `npm run build` passed. `rg` found no remaining visible eyebrow strings for `Realtime Interview`, `Interview Setup`, `Post Interview Report`, `Ability Tree`, or `Virtual Interviewer`.
+- Remaining risk: Future event types may still need explicit Chinese labels as more provider events are surfaced.

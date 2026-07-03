@@ -5,6 +5,7 @@ export type RealtimeEvent = {
   type: string;
   text?: string;
   speaker?: string;
+  event?: string;
   name?: string;
   summary?: string;
   stage?: string;
@@ -14,6 +15,24 @@ export type RealtimeEvent = {
   model?: string;
   message?: string;
 };
+
+export function appendRealtimeEvent(
+  events: RealtimeEvent[],
+  event: RealtimeEvent
+): RealtimeEvent[] {
+  const last = events[events.length - 1];
+  if (event.type === "transcript.partial" && last?.type === "transcript.partial") {
+    return [...events.slice(0, -1), event];
+  }
+  if (
+    event.type === "transcript.item" &&
+    event.speaker === "candidate" &&
+    last?.type === "transcript.partial"
+  ) {
+    return [...events.slice(0, -1), event];
+  }
+  return [...events, event];
+}
 
 export function useInterviewSession() {
   const socketRef = useRef<WebSocket | null>(null);
@@ -45,7 +64,7 @@ export function useInterviewSession() {
       socketRef.current = null;
     };
     socket.onmessage = (message) => {
-      setEvents((prev) => [...prev, JSON.parse(message.data)]);
+      setEvents((prev) => appendRealtimeEvent(prev, JSON.parse(message.data)));
     };
   }
 

@@ -39,7 +39,7 @@ export function ReportPage({ onBack }: ReportPageProps) {
 
   return (
     <section className="panel">
-      <p className="eyebrow">Post Interview Report</p>
+      <p className="eyebrow">面试后复盘</p>
       <h1>能力树复盘</h1>
       <p>{report.report.summary}</p>
       <h2>平均分：{report.report.score.average}</h2>

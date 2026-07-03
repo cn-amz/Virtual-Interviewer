@@ -27,7 +27,7 @@ export function LoginPage({ onLogin }: LoginPageProps) {
 
   return (
     <section className="panel login-panel">
-      <p className="eyebrow">Virtual Interviewer</p>
+      <p className="eyebrow">虚拟面试官</p>
       <h1>登录</h1>
       <p>使用演示账号进入第二阶段工作台。</p>
       <form className="login-form" onSubmit={handleSubmit}>

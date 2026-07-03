@@ -1,9 +1,43 @@
 import { useState } from "react";
-import { useInterviewSession } from "../realtime/useInterviewSession";
+import { type RealtimeEvent, useInterviewSession } from "../realtime/useInterviewSession";
 
 type InterviewPageProps = {
   onFinish: () => void;
 };
+
+const eventLabels: Record<string, string> = {
+  "session.ready": "会话就绪",
+  "assistant.text.delta": "面试官回复",
+  "assistant.audio.chunk": "面试官语音",
+  "transcript.partial": "实时转写",
+  "transcript.item": "发言记录",
+  "audio.started": "麦克风已开启",
+  "audio.stopped": "麦克风已停止",
+  "audio.error": "麦克风错误",
+  "client.pending": "等待回复",
+  "text.mode": "文本模式",
+  "realtime.error": "实时链路错误",
+  "bailian.event": "百炼事件",
+  "session.ended": "会话结束",
+};
+
+function eventTitle(event: RealtimeEvent): string {
+  return eventLabels[event.type] ?? event.type;
+}
+
+function eventContent(event: RealtimeEvent): string {
+  return (
+    event.text ??
+    event.summary ??
+    event.action ??
+    event.stage ??
+    event.message ??
+    event.event ??
+    event.mode ??
+    event.model ??
+    (event.bytes ? `${event.bytes} 字节` : "")
+  );
+}
 
 export function InterviewPage({ onFinish }: InterviewPageProps) {
   const {
@@ -38,7 +72,7 @@ export function InterviewPage({ onFinish }: InterviewPageProps) {
   return (
     <section className="interview-grid">
       <div className="panel">
-        <p className="eyebrow">Realtime Interview</p>
+        <p className="eyebrow">实时模拟面试</p>
         <h1>虚拟面试官</h1>
         <p>连接状态：{connected ? "已连接" : "未连接"}</p>
         <div className="button-row">
@@ -80,15 +114,8 @@ export function InterviewPage({ onFinish }: InterviewPageProps) {
         <div className="event-list">
           {events.map((event, index) => (
             <div className="event-item" key={`${event.type}-${index}`}>
-              <strong>{event.type}</strong>
-              <span>
-                {event.text ??
-                  event.summary ??
-                  event.action ??
-                  event.stage ??
-                  event.message ??
-                  (event.bytes ? `${event.bytes} bytes` : "")}
-              </span>
+              <strong>{eventTitle(event)}</strong>
+              <span>{eventContent(event)}</span>
             </div>
           ))}
         </div>
