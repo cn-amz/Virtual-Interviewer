@@ -26,6 +26,9 @@ function eventTitle(event: RealtimeEvent): string {
 }
 
 function eventContent(event: RealtimeEvent): string {
+  if (event.type === "assistant.audio.chunk") {
+    return "正在播放模型语音...";
+  }
   return (
     event.text ??
     event.summary ??

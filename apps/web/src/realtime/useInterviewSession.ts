@@ -1,11 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { createAudioCapture, type MicStatus } from "./audioCapture";
+import { createPcmAudioPlayer } from "./audioPlayback";
 
 export type RealtimeEvent = {
   type: string;
   text?: string;
   speaker?: string;
   event?: string;
+  data?: string;
+  mime_type?: string;
+  sample_rate?: number;
   name?: string;
   summary?: string;
   stage?: string;
@@ -24,6 +28,9 @@ export function appendRealtimeEvent(
   if (event.type === "transcript.partial" && last?.type === "transcript.partial") {
     return [...events.slice(0, -1), event];
   }
+  if (event.type === "assistant.audio.chunk" && last?.type === "assistant.audio.chunk") {
+    return [...events.slice(0, -1), event];
+  }
   if (
     event.type === "transcript.item" &&
     event.speaker === "candidate" &&
@@ -37,6 +44,7 @@ export function appendRealtimeEvent(
 export function useInterviewSession() {
   const socketRef = useRef<WebSocket | null>(null);
   const captureRef = useRef<ReturnType<typeof createAudioCapture> | null>(null);
+  const audioPlayerRef = useRef(createPcmAudioPlayer());
   const [events, setEvents] = useState<RealtimeEvent[]>([]);
   const [connected, setConnected] = useState(false);
   const [micStatus, setMicStatus] = useState<MicStatus>("idle");
@@ -45,6 +53,7 @@ export function useInterviewSession() {
   useEffect(() => {
     return () => {
       captureRef.current?.stop();
+      audioPlayerRef.current.close();
       socketRef.current?.close();
     };
   }, []);
@@ -53,6 +62,7 @@ export function useInterviewSession() {
     if (socketRef.current && socketRef.current.readyState !== WebSocket.CLOSED) {
       return;
     }
+    void audioPlayerRef.current.resume().catch(() => undefined);
     const socket = new WebSocket("ws://localhost:8000/api/interviews/realtime");
     socketRef.current = socket;
     socket.onopen = () => setConnected(true);
@@ -64,7 +74,19 @@ export function useInterviewSession() {
       socketRef.current = null;
     };
     socket.onmessage = (message) => {
-      setEvents((prev) => appendRealtimeEvent(prev, JSON.parse(message.data)));
+      const event = JSON.parse(message.data) as RealtimeEvent;
+      if (event.type === "assistant.audio.chunk") {
+        void audioPlayerRef.current
+          .playChunk(event.data ?? "", event.sample_rate ?? 24000)
+          .catch((error: unknown) => {
+            const errorMessage =
+              error instanceof Error ? error.message : "无法播放面试官语音。";
+            setEvents((prev) =>
+              appendRealtimeEvent(prev, { type: "audio.error", message: errorMessage })
+            );
+          });
+      }
+      setEvents((prev) => appendRealtimeEvent(prev, event));
     };
   }
 
@@ -77,6 +99,7 @@ export function useInterviewSession() {
   }
 
   function sendText(text: string) {
+    void audioPlayerRef.current.resume().catch(() => undefined);
     if (sendJson({ type: "text.input", text })) {
       setEvents((prev) => [
         ...prev,
@@ -89,6 +112,7 @@ export function useInterviewSession() {
   }
 
   function startMicrophone() {
+    void audioPlayerRef.current.resume().catch(() => undefined);
     if (!socketRef.current || socketRef.current.readyState !== WebSocket.OPEN) {
       setMicError("请先连接面试官，再开启麦克风。");
       setEvents((prev) => [
@@ -147,6 +171,7 @@ export function useInterviewSession() {
     captureRef.current = null;
     setMicStatus("idle");
     setMicError(undefined);
+    audioPlayerRef.current.resetQueue();
     sendJson({ type: "audio.stop" });
   }
 

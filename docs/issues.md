@@ -203,3 +203,14 @@ This file records user-discovered and Codex-discovered issues that may become ma
 - Solution: Add `appendRealtimeEvent()` so consecutive `transcript.partial` events update the latest partial card, and a final candidate `transcript.item` replaces the latest partial. Localize event labels and page eyebrow labels to Chinese.
 - Verification: Added Vitest coverage for partial transcript replacement and final transcript replacement. Frontend `npm run test` passed with 2 tests. Frontend `npm run build` passed. `rg` found no remaining visible eyebrow strings for `Realtime Interview`, `Interview Setup`, `Post Interview Report`, `Ability Tree`, or `Virtual Interviewer`.
 - Remaining risk: Future event types may still need explicit Chinese labels as more provider events are surfaced.
+
+## 2026-07-03 - Assistant Audio Chunks Repeated And Were Not Audible
+
+- Discovered by: User
+- Severity: High
+- Initial state: After Qwen-Omni-Realtime began replying, every `assistant.audio.chunk` was rendered as a separate event card, and the user could not hear the model's spoken response.
+- Impact: The model was producing audio data, but the demo looked noisy and failed the core virtual interviewer expectation of audible speech.
+- Root cause: The frontend treated `assistant.audio.chunk` as a display-only event. It did not aggregate streaming audio chunks and did not decode or play the base64 PCM payload. The backend also did not include the output sample rate in the mapped event, even though Bailian realtime output PCM is 24 kHz.
+- Solution: Added a small Web Audio PCM16 player that decodes base64 little-endian PCM16 and schedules chunks through `AudioContext`. Resume the audio context from user actions such as connect, text send, and microphone start. Collapse consecutive `assistant.audio.chunk` events into one visible card and display `正在播放模型语音...`. Include `sample_rate: 24000` in backend `assistant.audio.chunk` events.
+- Verification: Frontend `npm run test` passed with 4 tests covering PCM decode, partial transcript collapse, final transcript replacement, and assistant audio chunk collapse. Frontend `npm run build` passed. Backend `pytest tests/test_bailian_adapter.py -q` passed with 14 tests.
+- Remaining risk: Browser autoplay policies can still block audio if no prior user gesture resumes `AudioContext`; the current implementation attempts to resume audio output during user-triggered connect/text/microphone actions and surfaces playback failures as `audio.error`.

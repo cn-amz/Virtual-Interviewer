@@ -163,7 +163,14 @@ class BailianRealtimeAdapter:
         if event_type == "response.audio_transcript.delta":
             return [{"type": "assistant.text.delta", "text": event.get("delta", "")}]
         if event_type == "response.audio.delta":
-            return [{"type": "assistant.audio.chunk", "mime_type": "audio/pcm", "data": event.get("delta", "")}]
+            return [
+                {
+                    "type": "assistant.audio.chunk",
+                    "mime_type": "audio/pcm",
+                    "sample_rate": 24000,
+                    "data": event.get("delta", ""),
+                }
+            ]
         if event_type == "conversation.item.input_audio_transcription.delta":
             return [
                 {

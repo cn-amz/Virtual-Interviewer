@@ -70,7 +70,7 @@ def test_adapter_maps_bailian_server_events():
         {"type": "assistant.text.delta", "text": "继续说"}
     ]
     assert adapter.map_server_event({"type": "response.audio.delta", "delta": "AAAA"}) == [
-        {"type": "assistant.audio.chunk", "mime_type": "audio/pcm", "data": "AAAA"}
+        {"type": "assistant.audio.chunk", "mime_type": "audio/pcm", "sample_rate": 24000, "data": "AAAA"}
     ]
     assert adapter.map_server_event(
         {"type": "conversation.item.input_audio_transcription.completed", "transcript": "我的项目是..."}

@@ -30,4 +30,15 @@ describe("appendRealtimeEvent", () => {
       { type: "transcript.item", speaker: "candidate", text: "项目是机械臂控制。" },
     ]);
   });
+
+  it("updates the latest assistant audio chunk instead of appending repeated cards", () => {
+    const next = appendRealtimeEvent(
+      [{ type: "assistant.audio.chunk", data: "AAAA", sample_rate: 24000 }],
+      { type: "assistant.audio.chunk", data: "BBBB", sample_rate: 24000 }
+    );
+
+    expect(next).toEqual([
+      { type: "assistant.audio.chunk", data: "BBBB", sample_rate: 24000 },
+    ]);
+  });
 });
