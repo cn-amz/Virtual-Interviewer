@@ -102,6 +102,12 @@ http://127.0.0.1:5173/
 
 ## 日常启动命令
 
+更完整的本机环境、端口、日志和停止服务方式见：
+
+```text
+docs/local-dev-environment.md
+```
+
 终端 1，启动后端：
 
 ```powershell
