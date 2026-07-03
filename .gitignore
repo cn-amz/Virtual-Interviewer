@@ -19,6 +19,9 @@ data/ability_graphs/
 data/users/
 data/sessions/
 
+# Private learning graph / Obsidian workspace
+knowledge-graph/
+
 # Large or sensitive local artifacts
 *.pyc
 *.log

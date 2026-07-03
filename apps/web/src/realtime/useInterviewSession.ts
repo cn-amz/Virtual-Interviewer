@@ -31,6 +31,16 @@ export function appendRealtimeEvent(
   if (event.type === "assistant.audio.chunk" && last?.type === "assistant.audio.chunk") {
     return [...events.slice(0, -1), event];
   }
+  if (event.type === "assistant.text.delta") {
+    const index = findMergeableAssistantTextIndex(events);
+    if (index >= 0) {
+      const merged = {
+        ...events[index],
+        text: `${events[index].text ?? ""}${event.text ?? ""}`,
+      };
+      return [...events.slice(0, index), merged, ...events.slice(index + 1)];
+    }
+  }
   if (
     event.type === "transcript.item" &&
     event.speaker === "candidate" &&
@@ -39,6 +49,29 @@ export function appendRealtimeEvent(
     return [...events.slice(0, -1), event];
   }
   return [...events, event];
+}
+
+function findMergeableAssistantTextIndex(events: RealtimeEvent[]): number {
+  for (let index = events.length - 1; index >= 0; index -= 1) {
+    const event = events[index];
+    if (event.type === "assistant.text.delta") return index;
+    if (isAssistantTextBoundary(event)) return -1;
+  }
+  return -1;
+}
+
+function isAssistantTextBoundary(event: RealtimeEvent): boolean {
+  if (event.type === "bailian.event" && event.event === "response.done") return true;
+  return [
+    "session.ready",
+    "session.ended",
+    "transcript.partial",
+    "transcript.item",
+    "client.pending",
+    "audio.stopped",
+    "audio.error",
+    "realtime.error",
+  ].includes(event.type);
 }
 
 export function useInterviewSession() {

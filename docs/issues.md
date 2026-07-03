@@ -214,3 +214,14 @@ This file records user-discovered and Codex-discovered issues that may become ma
 - Solution: Added a small Web Audio PCM16 player that decodes base64 little-endian PCM16 and schedules chunks through `AudioContext`. Resume the audio context from user actions such as connect, text send, and microphone start. Collapse consecutive `assistant.audio.chunk` events into one visible card and display `正在播放模型语音...`. Include `sample_rate: 24000` in backend `assistant.audio.chunk` events.
 - Verification: Frontend `npm run test` passed with 4 tests covering PCM decode, partial transcript collapse, final transcript replacement, and assistant audio chunk collapse. Frontend `npm run build` passed. Backend `pytest tests/test_bailian_adapter.py -q` passed with 14 tests.
 - Remaining risk: Browser autoplay policies can still block audio if no prior user gesture resumes `AudioContext`; the current implementation attempts to resume audio output during user-triggered connect/text/microphone actions and surfaces playback failures as `audio.error`.
+
+## 2026-07-03 - Assistant Text Was Split And ASR Partial Accuracy Was Confusing
+
+- Discovered by: User
+- Severity: Medium
+- Initial state: After realtime audio began working, the model's spoken reply could still appear as several visible text fragments, and microphone recognition looked inaccurate because interim ASR updates were shown like stable final content.
+- Impact: The live interview page still felt noisy and uncertain: users could not easily distinguish temporary recognition from final transcript, and interviewer replies did not read like one coherent sentence.
+- Root cause: `assistant.text.delta` events were appended as independent visible cards even when they belonged to the same streamed reply. `transcript.partial` labels did not make the temporary nature obvious. The AudioWorklet downsampler also used nearest-neighbor sampling, which is minimal but can add avoidable distortion before ASR.
+- Solution: Merge assistant text deltas into the latest visible interviewer reply until a conversation boundary is reached, rename ASR labels to `实时转写（临时）` and `最终识别`, and replace nearest-neighbor downsampling with simple window averaging for speech input.
+- Verification: Frontend `npm run test` passed with 5 tests covering transcript collapse, final transcript replacement, assistant audio chunk collapse, and assistant text delta merging. Frontend `npm run build` passed.
+- Remaining risk: ASR quality still depends on microphone hardware, noise, speaking pace, and Bailian's realtime recognizer. A later calibration pass can add noise checks, gain/level display, and user-side confirmation before sending low-confidence speech to the interviewer.

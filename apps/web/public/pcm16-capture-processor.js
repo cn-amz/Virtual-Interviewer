@@ -29,7 +29,7 @@ class Pcm16CaptureProcessor extends AudioWorkletProcessor {
   }
 
   downsample(input) {
-    if (this.sourceSampleRate === this.targetSampleRate) {
+    if (this.sourceSampleRate <= this.targetSampleRate) {
       return input;
     }
 
@@ -38,8 +38,18 @@ class Pcm16CaptureProcessor extends AudioWorkletProcessor {
     let offset = this.readOffset;
 
     while (offset < input.length) {
-      output.push(input[Math.floor(offset)]);
-      offset += ratio;
+      const nextOffset = offset + ratio;
+      const averageEnd = Math.min(input.length, nextOffset);
+      let total = 0;
+      let count = 0;
+      for (let index = Math.floor(offset); index < Math.floor(averageEnd); index += 1) {
+        total += input[index];
+        count += 1;
+      }
+      // ponytail: simple window averaging is enough for speech ASR; upgrade to a proper
+      // low-pass resampler if music-quality audio or tougher noise conditions become a goal.
+      output.push(count > 0 ? total / count : input[Math.floor(offset)]);
+      offset = nextOffset;
     }
 
     this.readOffset = offset - input.length;
