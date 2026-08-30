@@ -64,7 +64,7 @@ type RealtimeEvent = {
   item_id?: string;
   response_id?: string;
   is_final?: boolean;
-  source?: "provider_asr" | "browser_asr" | "application";
+  source?: "provider_asr" | "browser_asr" | "provider" | "application";
 };
 ```
 
