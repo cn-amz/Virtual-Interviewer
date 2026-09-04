@@ -7,8 +7,9 @@
 - 赛题强调 LLM、RAG、Function Calling、零代码/低代码与智能体自主规划执行能力。
 - 项目定位建议：实时通话型虚拟面试官 Agent，围绕“面试前准备、实时面试、工具增强、面后复盘”形成完整闭环。
 - 已保存结构化比赛摘要：`docs/competition-requirements.md`。
-- 已导入用户 profile：`data/profiles/豆瓣酱`。
-- 已准备占位 JD：`data/job_descriptions/mechanical-arm-motion-control-algorithm-engineer.md`。
+- 原始简历优化/微调数据库：`data/profiles/豆瓣酱`，不作为面试运行时简历。
+- 面试专用简历快照：`data/interview_profiles/豆瓣酱`。
+- 面试专用 JD：`data/interview_job_descriptions/mechanical-arm-motion-control-algorithm-engineer.md`。
 
 ## 阿里云百炼能力
 
@@ -72,6 +73,23 @@
 - B：ASR + LLM + TTS 模块化流水线。可以做低延迟、可打断、边听边打断播报，但本质上是服务层编排出来的轮次系统，不是模型原生全双工。
 
 ## 能力知识图谱与能力树
+
+## 岗位方向分析参考
+
+同一类岗位名称不能直接决定面试方向。本项目用 JD 正文中的技术词和职责组合识别方向，并用公开岗位样本辅助百炼文本模型生成初始 Prompt：
+
+- [海康机器人：运动控制算法工程师](https://talent.hikvision.com/society/position?postId=34D120423CCEE750C1A0E1E5ECC540F8)：偏控制端架构、路径规划、仿真测试、PID/自适应控制和工业总线。
+- [上海人工智能实验室：机器人运控算法工程师](https://www.shlab.org.cn/joinus/detail/7649605753204279590?mode=social)：偏异构机器人规划控制、真机实验、MPC/PID/RL 和算法工程落地。
+- [中控信息：运动控制算法工程师（机器人-机械臂方向）](https://www.zhaopin.com/jobdetail/CC121142370J40751742506.htm)：偏机械臂 MoveIt2、运动学、碰撞检测、视觉控制和真机验证。
+- [黑格智造：运控算法工程师](https://career.hebut.edu.cn/home/correcruit/content/id/78856.html)：偏 FOC、电机控制、振动抑制、参数自整定和 ARM/DSP 部署。
+
+这些资料只作为行业对照，不会覆盖用户 JD 中没有出现的事实要求。每个 JD 的分析结果会单独保存到对应的 `*.analysis.json`，并由面试会话读取其中的实际方向、关注点和初始 Prompt。
+
+### Obsidian URI
+
+- Obsidian 支持通过 `obsidian://open?path=...` 使用绝对路径打开本地 Markdown 文件。
+- 本项目使用该方式打开 `data/ability_graphs/{user_id}/index.md`，不把个人能力树提交到公共仓库。
+- 官方文档：https://help.obsidian.md/Extending%2BObsidian/Obsidian%2BURI
 
 - 建议定位：面试后复盘报告与长期成长画像，不放入实时通话主链路。
 - 每个用户维护一棵个人“总能力树”，由简历、项目材料、历史面试转写、评分记录共同生长。

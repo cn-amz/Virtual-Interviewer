@@ -19,8 +19,9 @@ services/api/.env.example 百炼配置模板，不包含密钥
 docs/issues.md            已发现问题、根因和解决方案记录
 docs/unresolved-issues.md 当前未解决问题
 docs/progress.md          项目进度记录
-data/job_descriptions/    岗位 JD 示例
-data/profiles/            本地私有简历资料，默认不提交 Git
+data/interview_job_descriptions/  面试专用岗位 JD 快照，默认不提交 Git
+data/interview_profiles/          面试专用简历快照，默认不提交 Git
+data/profiles/                    简历优化与微调源数据库，不作为运行时简历
 ```
 
 ## 环境要求
@@ -30,12 +31,22 @@ data/profiles/            本地私有简历资料，默认不提交 Git
 - Node.js 18+
 - 阿里云百炼 / DashScope API Key
 
+## API 模式快速开始
+
+完整配置说明见 [`docs/bailian-api-setup.md`](docs/bailian-api-setup.md)。首次运行双击：
+
+```text
+start-api.cmd
+```
+
+填写脚本生成的 `services/api/.env` 后再次运行。停止由脚本启动的前后端时双击 `stop-api.cmd`。API 模式不需要 Docker，也不会启动 MiniCPM。
+
 ## 后端配置
 
 进入后端目录：
 
 ```powershell
-cd <project-root>\services\api
+Set-Location -LiteralPath '.\services\api'
 python -m venv .venv
 .\.venv\Scripts\pip install -e ".[dev]"
 ```
@@ -70,8 +81,8 @@ BAILIAN_TEXT_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 启动后端：
 
 ```powershell
-cd <project-root>\services\api
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+Set-Location -LiteralPath '.\services\api'
+.\.venv\Scripts\python.exe -m uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8000
 ```
 
 健康检查：
@@ -89,7 +100,7 @@ Invoke-RestMethod http://127.0.0.1:8000/api/health
 ## 前端启动
 
 ```powershell
-cd <project-root>\apps\web
+Set-Location -LiteralPath '.\apps\web'
 npm install
 npm run dev -- --host 127.0.0.1 --port 5173
 ```
@@ -111,14 +122,14 @@ docs/local-dev-environment.md
 终端 1，启动后端：
 
 ```powershell
-cd <project-root>\services\api
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+Set-Location -LiteralPath '.\services\api'
+.\.venv\Scripts\python.exe -m uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8000
 ```
 
 终端 2，启动前端：
 
 ```powershell
-cd <project-root>\apps\web
+Set-Location -LiteralPath '.\apps\web'
 npm run dev -- --host 127.0.0.1 --port 5173
 ```
 
@@ -156,14 +167,14 @@ npm run dev -- --host 127.0.0.1 --port 5173
 后端测试：
 
 ```powershell
-cd <project-root>\services\api
+Set-Location -LiteralPath '.\services\api'
 .\.venv\Scripts\pytest -q
 ```
 
 前端构建：
 
 ```powershell
-cd <project-root>\apps\web
+Set-Location -LiteralPath '.\apps\web'
 npm run build
 ```
 
@@ -178,8 +189,8 @@ foreach ($conn in $listeners) {
   Stop-Process -Id $ownerPid -Force
 }
 
-cd <project-root>\services\api
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+Set-Location -LiteralPath '.\services\api'
+.\.venv\Scripts\python.exe -m uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8000
 ```
 
 ## 隐私与安全
@@ -187,7 +198,8 @@ cd <project-root>\services\api
 - 不要提交 `services/api/.env`。
 - 不要提交真实 API Key。
 - 不要提交未经脱敏的简历、证书、个人资料。
-- `data/profiles/` 下的本地私有资料默认被 Git 忽略。
+- 面试运行时读取 `data/interview_profiles/` 和 `data/interview_job_descriptions/` 下的专用快照。
+- `data/profiles/` 仍是简历优化与微调源数据库，默认被 Git 忽略，不作为面试运行时简历。
 
 ## 常见问题
 
@@ -209,3 +221,7 @@ BAILIAN_TEXT_MODEL=qwen3.6-plus
 ### 3. 麦克风没声音或没有模型回复怎么办？
 
 先确认浏览器麦克风权限，然后检查阿里控制台是否有实时模型调用记录。语音链路仍需要更多真机验证，当前未解决项记录在 `docs/unresolved-issues.md`。
+
+## 开源许可
+
+本项目采用 [MIT License](LICENSE) 开源。

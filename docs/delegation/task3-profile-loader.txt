@@ -12,10 +12,10 @@ Implemented Task 3 — Profile and JD Loading. Created Pydantic models (`Profile
 - `services/api/tests/test_profile_loader.py` — created with 2 tests
 
 **Verification:**
-- `test_loader_finds_copied_profile` — passes (finds 豆瓣酱 profile)
+- `test_loader_finds_interview_profile` — passes with a temporary pseudonymous profile fixture
 - `test_loader_builds_session_profile` — passes (loads full session profile with skills, JD content, qa_bank)
 - Full `pytest -q`: 3 passed (1 health + 2 profile loader)
 
 **Notes/Risks:**
 - The `list_profiles()` method filters out `.gitkeep` since it's a file, not a directory, so it won't appear in the results.
-- Tests depend on the local `data/profiles/豆瓣酱/` directory existing on this machine, which it does.
+- Tests use temporary fixtures and do not depend on a local private profile directory.

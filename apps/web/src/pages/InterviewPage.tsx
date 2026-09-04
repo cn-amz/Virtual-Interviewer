@@ -1,61 +1,48 @@
-import { useState } from "react";
-import { type RealtimeEvent, useInterviewSession } from "../realtime/useInterviewSession";
+import { useEffect, useRef, useState } from "react";
+import { getProviderStatus, type ProviderStatus } from "../api/client";
+import {
+  deriveMessages,
+  isNearBottom,
+  isProviderReady,
+  type InterviewSessionSelection,
+  useInterviewSession,
+} from "../realtime/useInterviewSession";
 
 type InterviewPageProps = {
-  onFinish: () => void;
+  onFinish: (interviewId?: string) => void;
+  onCancel: () => void;
+  selection: InterviewSessionSelection;
 };
 
-const eventLabels: Record<string, string> = {
-  "session.ready": "会话就绪",
-  "assistant.text.delta": "面试官回复",
-  "assistant.audio.chunk": "面试官语音",
-  "transcript.partial": "实时转写（临时）",
-  "transcript.item": "最终识别",
-  "audio.started": "麦克风已开启",
-  "audio.stopped": "麦克风已停止",
-  "audio.error": "麦克风错误",
-  "client.pending": "等待回复",
-  "text.mode": "文本模式",
-  "realtime.error": "实时链路错误",
-  "bailian.event": "百炼事件",
-  "session.ended": "会话结束",
-};
-
-function eventTitle(event: RealtimeEvent): string {
-  return eventLabels[event.type] ?? event.type;
-}
-
-function eventContent(event: RealtimeEvent): string {
-  if (event.type === "assistant.audio.chunk") {
-    return "正在播放模型语音...";
-  }
-  return (
-    event.text ??
-    event.summary ??
-    event.action ??
-    event.stage ??
-    event.message ??
-    event.event ??
-    event.mode ??
-    event.model ??
-    (event.bytes ? `${event.bytes} 字节` : "")
-  );
-}
-
-export function InterviewPage({ onFinish }: InterviewPageProps) {
+export function InterviewPage({ onFinish, onCancel, selection }: InterviewPageProps) {
   const {
     connected,
+    connecting,
+    sessionState,
     events,
     micStatus,
     micError,
     start,
     sendText,
-    end,
+    finish,
+    cancel,
     startMicrophone,
     stopMicrophone,
-  } = useInterviewSession();
+  } = useInterviewSession((interviewId, status) => {
+    if (status === "completed") onFinish(interviewId);
+    else onCancel();
+  });
   const [answer, setAnswer] = useState(
     "我通过 ROS2 完成机械臂运动控制，并引入插值算法提升轨迹稳定性。"
+  );
+  const transcriptRef = useRef<HTMLDivElement | null>(null);
+  const transcriptEndRef = useRef<HTMLDivElement | null>(null);
+  const autoFollowRef = useRef(true);
+  const [followPaused, setFollowPaused] = useState(false);
+  const [providerStatus, setProviderStatus] = useState<ProviderStatus>();
+  const messages = deriveMessages(events);
+  const errors = events.filter(
+    (event) => event.type === "audio.error" || event.type === "realtime.error"
   );
 
   const micLabel =
@@ -68,8 +55,60 @@ export function InterviewPage({ onFinish }: InterviewPageProps) {
   const isMicActive = micStatus === "recording";
 
   function finishInterview() {
-    end();
-    onFinish();
+    finish();
+  }
+
+  function cancelInterview() {
+    if (window.confirm("退出后不会生成报告，确定退出吗？")) cancel();
+  }
+
+  const isEnding = sessionState === "ending";
+
+  useEffect(() => {
+    if (connected) return;
+    let active = true;
+    const refresh = () => {
+      void getProviderStatus(selection.provider)
+        .then((status) => {
+          if (active) setProviderStatus(status);
+        })
+        .catch(() => {
+          if (active) {
+            setProviderStatus({
+              provider: selection.provider,
+              state: "offline",
+              detail: "状态服务不可用",
+              queue_length: 0,
+            });
+          }
+        });
+    };
+    refresh();
+    const timer = window.setInterval(refresh, 3000);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+    };
+  }, [connected, selection.provider]);
+
+  useEffect(() => {
+    if (autoFollowRef.current) {
+      transcriptEndRef.current?.scrollIntoView({ block: "end" });
+    }
+  }, [events]);
+
+  function handleTranscriptScroll() {
+    const element = transcriptRef.current;
+    if (!element) return;
+    const nearBottom = isNearBottom(element.scrollTop, element.clientHeight, element.scrollHeight);
+    autoFollowRef.current = nearBottom;
+    setFollowPaused(!nearBottom);
+  }
+
+  function returnToLatest() {
+    autoFollowRef.current = true;
+    setFollowPaused(false);
+    transcriptEndRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
   }
 
   return (
@@ -77,22 +116,30 @@ export function InterviewPage({ onFinish }: InterviewPageProps) {
       <div className="panel">
         <p className="eyebrow">实时模拟面试</p>
         <h1>虚拟面试官</h1>
-        <p>连接状态：{connected ? "已连接" : "未连接"}</p>
+        <p>连接状态：{isEnding ? "正在保存面试" : connected ? "模型已就绪" : connecting ? "正在等待模型" : sessionState === "error" ? "连接异常" : "未连接"}</p>
+        {!connected && (
+          <p className="mic-status mic-status--hint">
+            引擎状态：{providerStatus?.detail ?? "正在检查..."}
+          </p>
+        )}
         <div className="button-row">
-          <button className="primary-button" onClick={start}>
+          <button className="primary-button" disabled={connecting || connected || isEnding || !isProviderReady(providerStatus?.state)} onClick={() => start(selection)}>
             连接面试官
           </button>
-          <button className="secondary-button" onClick={() => sendText(answer)}>
+          <button className="secondary-button" disabled={!connected} onClick={() => sendText(answer)}>
             发送模拟回答
           </button>
           <button
             className={isMicActive ? "mic-active-button" : "secondary-button"}
-            disabled={micStatus === "requesting" || !connected}
+            disabled={micStatus === "requesting" || !connected || isEnding}
             onClick={isMicActive ? stopMicrophone : startMicrophone}
           >
             {micLabel}
           </button>
-          <button className="secondary-button" onClick={finishInterview}>
+          <button className="secondary-button" disabled={!connected || isEnding} onClick={cancelInterview}>
+            退出面试
+          </button>
+          <button className="secondary-button" disabled={!connected || isEnding} onClick={finishInterview}>
             结束并生成报告
           </button>
         </div>
@@ -107,21 +154,47 @@ export function InterviewPage({ onFinish }: InterviewPageProps) {
           </p>
         )}
         {!connected && (
-          <p className="mic-status mic-status--hint">请先连接面试官，再开启麦克风。</p>
+          <p className="mic-status mic-status--hint">{connecting ? "正在等待模型 Worker，请勿开始录音。" : "请先连接面试官，再开启麦克风。"}</p>
         )}
         {micError && <p className="mic-error">{micError}</p>}
         <textarea value={answer} onChange={(event) => setAnswer(event.target.value)} />
       </div>
       <div className="panel">
-        <h2>事件流</h2>
-        <div className="event-list">
-          {events.map((event, index) => (
-            <div className="event-item" key={`${event.type}-${index}`}>
-              <strong>{eventTitle(event)}</strong>
-              <span>{eventContent(event)}</span>
-            </div>
-          ))}
+        <h2>面试对话</h2>
+        <div className="chat-transcript-shell">
+        <div className="chat-transcript" ref={transcriptRef} onScroll={handleTranscriptScroll}>
+          {messages.length === 0 ? (
+            <p className="chat-empty">连接面试官后，对话将显示在这里。</p>
+          ) : (
+            messages.map((message) => (
+              <div
+                className={`chat-bubble chat-bubble--${message.role}`}
+                key={`${message.role}-${message.id}`}
+              >
+                <span className="chat-bubble__speaker">
+                  {message.role === "user" ? "候选人" : "面试官"}
+                </span>
+                <p className="chat-bubble__text">{message.text}</p>
+              </div>
+            ))
+          )}
+          <div ref={transcriptEndRef} />
         </div>
+        {followPaused && (
+          <button className="chat-follow-button" type="button" aria-label="回到最新消息" onClick={returnToLatest}>
+            ↓
+          </button>
+        )}
+        </div>
+        {errors.length > 0 && (
+          <div className="chat-errors">
+            {errors.map((event, index) => (
+              <p className="chat-error" key={`error-${index}`}>
+                {event.message ?? "发生错误。"}
+              </p>
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

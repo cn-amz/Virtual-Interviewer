@@ -67,6 +67,16 @@ Every issue discovered by the user or Codex must be written down and tracked to 
 
 This ensures the final report has a complete, auditable trail of problems found, decisions made, and solutions converged.
 
+## Knowledge Graph Persistence
+
+The local Obsidian knowledge graph under `knowledge-graph/` is the user's study and project-memory vault. It is intentionally Git-ignored and should stay isolated from the public repository unless the user explicitly changes that policy.
+
+- After every meaningful optimization, design correction, or problem-resolution cycle, add a short note or update the relevant existing note in `knowledge-graph/`.
+- Engineering issues still belong first in `docs/issues.md`; the knowledge graph should capture the reusable learning, decision, and report material.
+- Realtime/API/model lessons should update `knowledge-graph/04-概念卡/实时语音链路.md` or a related concept card.
+- Interview behavior, scoring, report, and ability-tree lessons should update the corresponding notes under `knowledge-graph/02-面试问答/` or `knowledge-graph/04-概念卡/`.
+- Keep knowledge graph notes readable in Obsidian with wikilinks and concise frontmatter.
+
 ## Project Ownership
 
 Codex remains responsible for:

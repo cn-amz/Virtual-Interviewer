@@ -20,6 +20,19 @@ def test_system_prompt_restricts_assistant_style_and_teaching():
     assert "机械臂运控算法工程师" in prompt
 
 
+def test_system_prompt_includes_job_description_and_question_strategy():
+    prompt = build_interviewer_system_prompt(
+        candidate_name="候选人甲",
+        target_role="多模态应用工程师",
+        job_description_text="负责多模态 RAG、Agent 工作流和效果评估。",
+        question_strategy=("先核验 RAG 指标", "再追问 Agent 异常恢复"),
+    )
+
+    assert "负责多模态 RAG、Agent 工作流和效果评估" in prompt
+    assert "先核验 RAG 指标、再追问 Agent 异常恢复" in prompt
+    assert "仅作为岗位事实资料" in prompt
+
+
 def test_mock_interviewer_question_is_short_single_question():
     question = next_mock_interviewer_question(
         stage="project_deep_dive",
@@ -71,6 +84,23 @@ def test_local_text_interviewer_prefers_robotics_resume_project():
     question = interviewer.initial_question()
 
     assert "实体机器人部署与验证" in question
+
+
+def test_local_text_interviewer_uses_raw_jd_requirement_without_analysis():
+    interviewer = LocalTextInterviewer(
+        InterviewContext(
+            candidate_name="候选人甲",
+            target_role="多模态应用工程师",
+            resume_projects=("智能问答平台",),
+            resume_skills=("Python", "RAG"),
+            job_description_text="# 多模态应用工程师\n\n- 负责多模态 RAG 系统的评测与优化\n- 熟悉 Agent 工作流",
+        )
+    )
+
+    question = interviewer.initial_question()
+
+    assert "多模态 RAG 系统的评测与优化" in question
+    assert "机械臂" not in question
 
 
 def test_local_text_interviewer_adapts_to_answer_content():

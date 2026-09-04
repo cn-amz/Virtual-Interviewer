@@ -23,7 +23,8 @@ Updated: 2026-06-24 17:05 Asia/Shanghai
 - WebRTC: reserved extension, not MVP.
 - Public access: provider interface reserved; initial demo can use tunnel or temporary cloud deployment.
 - Ability graph: post-interview report module, JSON-first storage.
-- Private profile data: available locally under `data/profiles/豆瓣酱`, excluded from GitHub by `.gitignore`.
+- Source profile database: available locally under `data/profiles/豆瓣酱`, excluded from GitHub and excluded from runtime interview loading.
+- Interview snapshots: available under `data/interview_profiles/豆瓣酱` and `data/interview_job_descriptions/`, both excluded from GitHub.
 
 ## Completed Artifacts
 
@@ -33,7 +34,7 @@ Updated: 2026-06-24 17:05 Asia/Shanghai
 - `docs/architecture-proposal.md`
 - `docs/superpowers/specs/2026-06-24-virtual-interviewer-design.md`
 - `docs/superpowers/plans/2026-06-24-virtual-interviewer-mvp.md`
-- `data/job_descriptions/mechanical-arm-motion-control-algorithm-engineer.md`
+- `data/interview_job_descriptions/mechanical-arm-motion-control-algorithm-engineer.md`
 
 ## Issues And Risks
 
@@ -67,13 +68,18 @@ Updated: 2026-06-24 17:05 Asia/Shanghai
 | 2026-06-24 12:34 | Phase 2 live audio skeleton | Completed | Browser `MediaRecorder` capture, backend audio events, realtime gateway, and WebSocket mock audio test added; backend `pytest -q` -> 31 passed; frontend `npm run build` -> succeeded |
 | 2026-06-30 | Bailian text mode and UTF-8 cleanup | Completed | Added `TEXT_MODE=bailian_text` through DashScope OpenAI-compatible chat completions with `qwen3.6-plus`, preserved local fallback, fixed mojibake strings; backend `pytest -q` -> 52 passed; frontend `npm run build` -> succeeded; direct local WebSocket probe returned cloud text output |
 | 2026-07-01 | Phase 2 login and dashboard slice | Completed | Added demo login, bearer session APIs, local token restore, dashboard entry, ability-tree placeholder, and user-owned mock report output; backend `pytest -q` -> 61 passed; frontend `npm run build` -> succeeded |
+| 2026-08-17 | Full transcript, AI report, and Obsidian-style ability tree | Completed | Added durable realtime session ledgers, complete text retention, optional Bailian `qwen3.6-plus` report analysis with deterministic fallback, authenticated report analysis, JSON plus Markdown ability-tree output, and a real ability-tree page; backend `pytest -q` -> 68 passed; frontend tests -> 10 passed; `npm run build` -> succeeded |
+| 2026-08-17 | Runtime data path and legacy Markdown compatibility | Completed | Default storage now resolves to the repository `data/` directory; legacy JSON ability trees lazily receive Markdown indexes; post-restart smoke confirmed `/api/health` 200, Markdown 200, and 67 local history records |
+| 2026-08-18 | Evidence-first ability tree and UTF-8 Markdown repair | Completed | Added question/answer/knowledge-point evidence details, legacy tree hydration, UTF-8 BOM Markdown, nested Obsidian links, clickable frontend tree, evidence detail panel, report jump, and `机械臂运控知识点` study card; backend `pytest -q` -> 70 passed; frontend tests -> 10 passed; build and restart smoke succeeded |
+| 2026-08-18 | History filtering and direct Obsidian opening | Completed | Hidden `int_` test/empty records from the history UI, retained files for debugging, returned per-user Markdown path and encoded `obsidian://open?path=...` URI, and verified current history count is 0 while the demo tree retains 18 evidence details |
 | 2026-06-24 16:06 | Interviewer persona guardrails | Completed | Added central persona prompt, mock interviewer questions, and tests preventing assistant-style wording; backend `pytest -q` -> 35 passed; frontend `npm run build` -> succeeded |
 
 ## Current Frontend Shape
 
 - Setup screen: single panel with target role and start button.
-- Interview screen: two-column layout with connection controls, simulated answer textbox, and event stream.
-- Report screen: post-interview summary, average score, growth branches, and virtual branches.
+- Interview screen: two-column chat layout with connection controls, simulated answer textbox, and microphone controls.
+- Report screen: stored full transcript, optional Bailian analysis, average score, growth branches, and virtual branches.
+- Ability-tree screen: JSON-backed nodes plus an authenticated Obsidian-style Markdown index export.
 
 This is an engineering MVP, not final visual polish. It is ready for an external UI pass or design API pass.
 
@@ -97,7 +103,7 @@ Phase 2 implementation plan: `docs/superpowers/plans/2026-06-24-live-audio-omni-
 | --- | --- | --- | --- |
 | Task 1: Repository Baseline | Done | Commits `434a8a7`, `e25faf8`, `8935d4d`; branch pushed | `gh` unavailable; using plain git |
 | Task 2: Backend Project Scaffold | Done | Local verification in `services/api`: `pytest -q` -> 1 passed | StarletteDeprecationWarning from FastAPI TestClient import; generated egg-info was accidentally committed then removed in `1059932` |
-| Task 3: Profile And JD Loading | Done | `pytest tests/test_profile_loader.py -q` -> 2 passed; full backend `pytest -q` -> 3 passed | Depends on local ignored `data/profiles/豆瓣酱` for current tests |
+| Task 3: Profile And JD Loading | Done | `pytest tests/test_profile_loader.py -q` -> passed with temporary fixtures | Tests do not depend on ignored private profile data |
 | Task 4: Interview State Machine And Tool Router | Done | `pytest tests/test_interview_state.py tests/test_tool_router.py -q` -> 6 passed; full backend `pytest -q` -> 9 passed | None |
 | Task 5: Scoring, Ability Tree, And Report Generation | Done | `pytest tests/test_ability_tree.py tests/test_reporting.py -q` -> 2 passed; full backend `pytest -q` -> 11 passed | Deterministic MVP scoring is intentionally simple |
 | Task 6: Interview Storage And Mock Realtime WebSocket | Done | `pytest tests/test_interviews.py -q` -> 1 passed; full backend `pytest -q` -> 12 passed | Runtime JSON written under ignored `data/interviews` and `data/ability_graphs` |
@@ -110,6 +116,10 @@ Phase 2 implementation plan: `docs/superpowers/plans/2026-06-24-live-audio-omni-
 | Task 13: Interviewer Persona Guardrails | Done | Backend `pytest -q` -> 35 passed; frontend `npm run build` -> succeeded | Mock questions are still deterministic templates; later Qwen-Omni should use the same system prompt for adaptive dialogue |
 | Task 14: Bailian Text Fallback And PCM Audio | Done | Backend `pytest -q` -> 39 passed; frontend `npm run build` -> succeeded | Text mode is local low-cost; live audio still needs browser/manual verification |
 | Task 15: Adaptive Text Interviewer And Realtime Stop Fix | Done | Backend `pytest -q` -> 43 passed; frontend `npm run build` -> succeeded | Local text mode is deterministic; richer generated text mode can use a cheaper Bailian text model later |
+| Task 16: Ability Tree Type Branches And Question Merging | Done | Backend `pytest -q` -> 77 passed; frontend `npm test -- --run` -> 10 passed; `npm run build` -> succeeded | Local exact-question merge is deterministic; semantic merge is explicit and uses Bailian text API only when requested |
+| Task 17: Obsidian Jump Fallback | Done | API endpoint and Markdown path smoke tests pass | Custom URI still depends on desktop protocol registration; copy-path fallback is provided |
+| Task 18: Paste JD And Save Markdown | Done | Backend `pytest -q` -> 81 passed; frontend `npm test -- --run` -> 10 passed; `npm run build` -> succeeded | Same-title JD currently replaces the existing Markdown file |
+| Task 19: Per-JD Direction And Interview Prompt Analysis | Done | Backend `pytest -q` -> 89 passed; frontend `npm test -- --run` -> 10 passed; `npm run build` -> succeeded; existing JD regenerated | Uses curated web research context in MVP; current local Qwen analysis timed out and correctly fell back |
 
 ## Final Verification
 
@@ -118,3 +128,9 @@ Phase 2 implementation plan: `docs/superpowers/plans/2026-06-24-live-audio-omni-
 | `cd services/api; .\.venv\Scripts\pytest -q` | 43 passed, 1 Starlette/httpx deprecation warning |
 | `cd apps/web; npm run build` | TypeScript compile and Vite production build succeeded |
 | Browser smoke at `http://127.0.0.1:5173` | Setup, mock WebSocket interview, tool events, and report screen worked |
+# 2026-09-03 - JD-Grounded Prompt Orchestration
+
+- 将百炼 API 面试的岗位化机制命名为 `JD-Grounded Prompt Orchestration`，核心机制为 `JD Grounding`。
+- 打通 `所选 JD -> 面试上下文 -> BailianRealtimeConfig -> session.instructions`，并消费已有的 `question_strategy`。
+- 无预分析时仍注入最多 8000 字 JD 原文；首题从 JD 关注点或正文要求切入。
+- 增加 Windows API 模式一键启停脚本和 `docs/bailian-api-setup.md`，不启动 Docker/MiniCPM。

@@ -22,9 +22,10 @@ export function decodePcm16Base64(base64: string): Float32Array {
   return samples;
 }
 
-export function createPcmAudioPlayer() {
+export function createPcmAudioPlayer(onPlaybackStateChange: (active: boolean) => void = () => undefined) {
   let audioContext: AudioContext | null = null;
   let nextStartTime = 0;
+  let activeSources = 0;
 
   function ensureAudioContext(): AudioContext {
     if (audioContext) return audioContext;
@@ -60,7 +61,18 @@ export function createPcmAudioPlayer() {
     source.connect(context.destination);
 
     const startAt = Math.max(context.currentTime, nextStartTime);
-    source.start(startAt);
+    source.onended = () => {
+      activeSources = Math.max(0, activeSources - 1);
+      if (activeSources === 0) onPlaybackStateChange(false);
+    };
+    if (activeSources === 0) onPlaybackStateChange(true);
+    activeSources += 1;
+    try {
+      source.start(startAt);
+    } catch (error) {
+      source.onended?.(new Event("ended"));
+      throw error;
+    }
     nextStartTime = startAt + buffer.duration;
   }
 
@@ -76,6 +88,8 @@ export function createPcmAudioPlayer() {
     }
     audioContext = null;
     nextStartTime = 0;
+    if (activeSources > 0) onPlaybackStateChange(false);
+    activeSources = 0;
   }
 
   return { resume, playChunk, resetQueue, close };

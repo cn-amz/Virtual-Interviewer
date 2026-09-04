@@ -1,6 +1,6 @@
 import { logout, type UserPublic } from "../api/client";
 
-type DashboardTarget = "setup" | "abilityTree";
+type DashboardTarget = "setup" | "abilityTree" | "history" | "manage";
 
 type DashboardPageProps = {
   user: UserPublic;
@@ -28,13 +28,15 @@ const cards: Array<{
   },
   {
     title: "历史报告",
-    desc: "查看过往面试记录和复盘报告，后续阶段开放。",
-    enabled: false,
+    desc: "查看过往面试记录和复盘报告。",
+    target: "history",
+    enabled: true,
   },
   {
     title: "管理简历与岗位",
-    desc: "编辑个人简历和目标岗位，后续阶段开放。",
-    enabled: false,
+    desc: "查看全部资料并添加不同人的简历和岗位 JD。",
+    target: "manage",
+    enabled: true,
   },
 ];
 

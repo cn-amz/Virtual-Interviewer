@@ -34,6 +34,10 @@ class RealtimeGateway:
 
             if event_type == "session.end":
                 return await self._call("handle_session_end")
+
+            if event_type == "session.cancel":
+                method = "handle_session_cancel" if hasattr(self._session, "handle_session_cancel") else "handle_session_end"
+                return await self._call(method)
         except Exception as exc:
             return [{"type": "realtime.error", "message": str(exc)}]
 

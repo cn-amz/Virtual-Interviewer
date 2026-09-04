@@ -170,7 +170,7 @@ Open `http://localhost:5173`.
 Run:
 
 ```powershell
-git add .gitignore README.md AGENTS.md docs data/job_descriptions data/profiles/豆瓣酱/config.json data/profiles/豆瓣酱/profile.json data/profiles/豆瓣酱/prompt.txt data/profiles/豆瓣酱/qa_bank.md
+git add .gitignore README.md AGENTS.md docs data/job_descriptions
 git commit -m "docs: capture virtual interviewer design baseline"
 ```
 
@@ -2122,4 +2122,3 @@ The plan contains no unresolved placeholder markers. Reserved providers are inte
 ### Type Consistency
 
 The event fields, report fields, and ability tree fields match across backend services and frontend consumers. The profile and JD IDs match the files already present under `data/`.
-

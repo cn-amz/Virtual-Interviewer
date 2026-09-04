@@ -15,8 +15,9 @@
 ## 当前输入材料
 
 - 比赛要求摘要：`docs/competition-requirements.md`
-- 用户 profile：`data/profiles/豆瓣酱`
-- 目标 JD：`data/job_descriptions/mechanical-arm-motion-control-algorithm-engineer.md`
+- 原始简历优化/微调数据库：`data/profiles/豆瓣酱`，不进入面试运行时。
+- 面试 profile：`data/interview_profiles/豆瓣酱`
+- 目标 JD：`data/interview_job_descriptions/mechanical-arm-motion-control-algorithm-engineer.md`
 
 ## 推荐目录结构
 
@@ -70,7 +71,9 @@ Virtual-Interviewer/
 │       └── tests/
 │
 ├── data/
-│   ├── profiles/                    # 从 interview-assistant 迁移来的简历/profile
+│   ├── profiles/                    # 简历优化与微调源数据库，不作为运行时简历
+│   ├── interview_profiles/          # 面试专用简历快照
+│   ├── interview_job_descriptions/  # 面试专用岗位 JD 快照
 │   ├── interviews/                  # 转写、事件、评分
 │   └── ability_graphs/              # 每个用户的能力树 JSON
 │

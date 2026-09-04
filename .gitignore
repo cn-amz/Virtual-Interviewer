@@ -10,10 +10,16 @@ dist/
 .env.*
 !.env.example
 .superpowers/
+.runtime/
+.claude/
 
 # Runtime and private user data
 data/profiles/*
 !data/profiles/.gitkeep
+data/interview_profiles/*
+!data/interview_profiles/.gitkeep
+data/interview_job_descriptions/*
+!data/interview_job_descriptions/.gitkeep
 data/interviews/
 data/ability_graphs/
 data/users/

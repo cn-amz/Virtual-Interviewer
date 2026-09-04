@@ -15,7 +15,7 @@
 - Node.js：`v24.14.0`
 - npm：`11.9.0`
 
-备注：本机后端启动后，端口反查显示 Python 进程命令为 `<python-executable> -m uvicorn ...`。这是当前虚拟环境入口解析到的实际 Python 可执行文件；后端仍从 `<project-root>\services\api` 目录启动，并读取该目录下的配置。
+后端应使用 `services\api\.venv` 中的 Python 启动，并从 `services\api` 读取配置。
 
 ## 当前服务端口
 
@@ -52,22 +52,22 @@ BAILIAN_TEXT_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
 窗口 1，启动后端：
 
 ```powershell
-cd <project-root>
+Set-Location -LiteralPath '<project-root>'
 .\scripts\dev.ps1 backend
 ```
 
 窗口 2，启动前端：
 
 ```powershell
-cd <project-root>
+Set-Location -LiteralPath '<project-root>'
 .\scripts\dev.ps1 frontend
 ```
 
 如果 PowerShell 阻止脚本执行，可以使用：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File <project-root>\scripts\dev.ps1 backend
-powershell -ExecutionPolicy Bypass -File <project-root>\scripts\dev.ps1 frontend
+powershell -ExecutionPolicy Bypass -File '<project-root>\scripts\dev.ps1' backend
+powershell -ExecutionPolicy Bypass -File '<project-root>\scripts\dev.ps1' frontend
 ```
 
 ## Codex 本次后台启动方式
@@ -82,12 +82,12 @@ Codex 在 2026-07-03 使用后台进程启动了服务，并把日志写到：
 后台启动命令等价于：
 
 ```powershell
-cd <project-root>\services\api
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
+Set-Location -LiteralPath '<project-root>\services\api'
+.\.venv\Scripts\python.exe -m uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8000 --reload
 ```
 
 ```powershell
-cd <project-root>\apps\web
+Set-Location -LiteralPath '<project-root>\apps\web'
 npm run dev -- --host 127.0.0.1 --port 5173
 ```
 

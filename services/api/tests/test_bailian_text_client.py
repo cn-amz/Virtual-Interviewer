@@ -88,6 +88,39 @@ async def test_text_client_handles_missing_choices():
 
 
 @pytest.mark.asyncio
+async def test_text_client_organizes_ability_tree_with_json_prompt():
+    async def fake_post(url, **kwargs):
+        assert kwargs["json"]["model"] == "qwen3.6-plus"
+        assert kwargs["json"]["messages"][0]["role"] == "system"
+        return _fake_response('{"branches": []}')
+
+    client = BailianTextClient(
+        BailianTextConfig(api_key="sk-test"),
+        system_prompt="测试",
+        http_post=fake_post,
+    )
+
+    result = await client.organize_ability_tree("整理这些证据")
+
+    assert result == '{"branches": []}'
+
+
+@pytest.mark.asyncio
+async def test_text_client_analyzes_job_description_with_qwen():
+    async def fake_post(url, **kwargs):
+        assert kwargs["json"]["model"] == "qwen3.6-plus"
+        return _fake_response('{"role_direction":"机械臂规划"}')
+
+    client = BailianTextClient(
+        BailianTextConfig(api_key="sk-test"),
+        system_prompt="测试",
+        http_post=fake_post,
+    )
+
+    assert await client.analyze_job_description("分析 JD") == '{"role_direction":"机械臂规划"}'
+
+
+@pytest.mark.asyncio
 async def test_adapter_handle_text_uses_cloud_when_text_mode_bailian():
     from app.integrations.bailian.omni_realtime import BailianRealtimeAdapter, BailianRealtimeConfig
 
@@ -107,8 +140,21 @@ async def test_adapter_handle_text_uses_cloud_when_text_mode_bailian():
 
     events = await adapter.handle_text("我负责 ROS2 运动控制。")
 
-    assert events[0] == {"type": "transcript.item", "speaker": "candidate", "text": "我负责 ROS2 运动控制。"}
-    assert events[1] == {"type": "assistant.text.delta", "text": "这个项目里你本人负责什么？"}
+    assert events[0] == {
+        "type": "transcript.item",
+        "speaker": "candidate",
+        "text": "我负责 ROS2 运动控制。",
+        "turn_id": "local-candidate-1",
+        "is_final": True,
+        "source": "application",
+    }
+    assert events[1] == {
+        "type": "assistant.text.delta",
+        "text": "这个项目里你本人负责什么？",
+        "turn_id": "local-assistant-1",
+        "is_final": True,
+        "source": "application",
+    }
     assert events[2] == {"type": "text.mode", "mode": "bailian_text", "model": "qwen3.6-plus"}
 
 

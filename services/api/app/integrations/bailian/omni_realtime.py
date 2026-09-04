@@ -5,6 +5,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from typing import Any
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+from uuid import uuid4
 
 import websockets
 
@@ -27,6 +28,12 @@ class BailianRealtimeConfig:
     target_role: str = "机械臂运控算法工程师"
     resume_projects: tuple[str, ...] = ("ROS2 机械臂运动控制",)
     resume_skills: tuple[str, ...] = ("ROS2", "机械臂运动控制", "轨迹规划", "插值算法")
+    role_direction: str = "机器人运动规划与控制工程"
+    interview_focus: tuple[str, ...] = ()
+    question_strategy: tuple[str, ...] = ()
+    initial_prompt: str = ""
+    resume_text: str = ""
+    job_description_text: str = ""
 
 
 class BailianRealtimeAdapter:
@@ -39,18 +46,35 @@ class BailianRealtimeAdapter:
         self.config = config
         self.websocket_connect = websocket_connect or websockets.connect
         self.websocket: Any | None = None
+        self.session_id = f"iv_{uuid4().hex[:10]}"
         self.context = InterviewContext(
             candidate_name=config.candidate_name,
             target_role=config.target_role,
             resume_projects=config.resume_projects,
             resume_skills=config.resume_skills,
+            role_direction=config.role_direction,
+            interview_focus=config.interview_focus,
+            question_strategy=config.question_strategy,
+            initial_prompt=config.initial_prompt,
+            resume_text=config.resume_text,
+            job_description_text=config.job_description_text,
         )
         self.system_prompt = build_interviewer_system_prompt(
             candidate_name=config.candidate_name,
             target_role=config.target_role,
+            role_direction=config.role_direction,
+            interview_focus=config.interview_focus,
+            question_strategy=config.question_strategy,
+            initial_prompt=config.initial_prompt,
+            resume_text=config.resume_text,
+            job_description_text=config.job_description_text,
         )
         self.text_interviewer = LocalTextInterviewer(self.context)
         self._text_client = text_client or self._create_text_client()
+        self._candidate_turn = 0
+        self._assistant_turn = 0
+        self._current_candidate_turn_id: str | None = None
+        self._current_assistant_turn_id: str | None = None
 
     def validate_ready(self) -> None:
         if not self.config.api_key:
@@ -89,34 +113,51 @@ class BailianRealtimeAdapter:
         )
 
     def start_events(self) -> list[dict]:
+        turn_id = self._next_turn_id("assistant")
         return [
-            {"type": "session.ready", "mode": "bailian"},
-            {"type": "assistant.text.delta", "text": self.text_interviewer.initial_question()},
+            {"type": "session.ready", "session_id": self.session_id, "mode": "bailian"},
+            {
+                "type": "assistant.text.delta",
+                "text": self.text_interviewer.initial_question(),
+                "turn_id": turn_id,
+                "is_final": True,
+                "source": "application",
+            },
         ]
 
     async def handle_text(self, text: str) -> list[dict]:
+        candidate_turn_id = self._next_turn_id("candidate")
+        assistant_turn_id = self._next_turn_id("assistant")
+        candidate = {
+            "type": "transcript.item",
+            "speaker": "candidate",
+            "text": text,
+            "turn_id": candidate_turn_id,
+            "is_final": True,
+            "source": "application",
+        }
         if self._text_client:
             try:
                 self._text_client.add_to_history("user", text)
                 reply = await self._text_client.next_question()
                 return [
-                    {"type": "transcript.item", "speaker": "candidate", "text": text},
-                    {"type": "assistant.text.delta", "text": reply},
+                    candidate,
+                    self._application_reply(reply, assistant_turn_id),
                     {"type": "text.mode", "mode": "bailian_text", "model": self.config.text_model},
                 ]
             except Exception as exc:
                 reply = self.text_interviewer.next_question(text)
                 return [
-                    {"type": "transcript.item", "speaker": "candidate", "text": text},
+                    candidate,
                     {"type": "realtime.error", "message": f"Bailian text call failed: {exc}"},
-                    {"type": "assistant.text.delta", "text": reply},
+                    self._application_reply(reply, assistant_turn_id),
                     {"type": "text.mode", "mode": "local-fallback"},
                 ]
 
         reply = self.text_interviewer.next_question(text)
         return [
-            {"type": "transcript.item", "speaker": "candidate", "text": text},
-            {"type": "assistant.text.delta", "text": reply},
+            candidate,
+            self._application_reply(reply, assistant_turn_id),
             {"type": "text.mode", "mode": "local-low-cost"},
         ]
 
@@ -161,7 +202,16 @@ class BailianRealtimeAdapter:
     def map_server_event(self, event: dict) -> list[dict]:
         event_type = event.get("type")
         if event_type == "response.audio_transcript.delta":
-            return [{"type": "assistant.text.delta", "text": event.get("delta", "")}]
+            turn_id = self._provider_turn_id(event, "assistant")
+            result = {
+                "type": "assistant.text.delta",
+                "text": event.get("delta", ""),
+                "turn_id": turn_id,
+                "is_final": False,
+                "source": "provider",
+            }
+            self._copy_ids(event, result)
+            return [result]
         if event_type == "response.audio.delta":
             return [
                 {
@@ -172,15 +222,30 @@ class BailianRealtimeAdapter:
                 }
             ]
         if event_type == "conversation.item.input_audio_transcription.delta":
-            return [
-                {
-                    "type": "transcript.partial",
-                    "speaker": "candidate",
-                    "text": f"{event.get('text', '')}{event.get('stash', '')}",
-                }
-            ]
+            turn_id = self._provider_turn_id(event, "candidate")
+            result = {
+                "type": "transcript.partial",
+                "speaker": "candidate",
+                "text": f"{event.get('text', '')}{event.get('stash', '')}",
+                "turn_id": turn_id,
+                "is_final": False,
+                "source": "provider_asr",
+            }
+            self._copy_ids(event, result)
+            return [result]
         if event_type == "conversation.item.input_audio_transcription.completed":
-            return [{"type": "transcript.item", "speaker": "candidate", "text": event.get("transcript", "")}]
+            turn_id = self._provider_turn_id(event, "candidate")
+            self._current_candidate_turn_id = None
+            result = {
+                "type": "transcript.item",
+                "speaker": "candidate",
+                "text": event.get("transcript", ""),
+                "turn_id": turn_id,
+                "is_final": True,
+                "source": "provider_asr",
+            }
+            self._copy_ids(event, result)
+            return [result]
         if event_type == "session.finished":
             return [{"type": "session.ended", "mode": "bailian"}]
         if event_type == "error":
@@ -195,8 +260,44 @@ class BailianRealtimeAdapter:
             "response.created",
             "response.done",
         }:
+            if event_type == "response.done":
+                self._current_assistant_turn_id = None
             return [{"type": "bailian.event", "event": event_type}]
         return []
+
+    def _next_turn_id(self, speaker: str) -> str:
+        if speaker == "candidate":
+            self._candidate_turn += 1
+            return f"local-candidate-{self._candidate_turn}"
+        self._assistant_turn += 1
+        return f"local-assistant-{self._assistant_turn}"
+
+    def _provider_turn_id(self, event: dict, speaker: str) -> str:
+        upstream = event.get("item_id") if speaker == "candidate" else event.get("response_id") or event.get("item_id")
+        if upstream:
+            return str(upstream)
+        current_name = f"_current_{speaker}_turn_id"
+        current = getattr(self, current_name)
+        if not current:
+            current = self._next_turn_id(speaker)
+            setattr(self, current_name, current)
+        return current
+
+    @staticmethod
+    def _copy_ids(source: dict, target: dict) -> None:
+        for field in ("item_id", "response_id"):
+            if source.get(field):
+                target[field] = source[field]
+
+    @staticmethod
+    def _application_reply(text: str, turn_id: str) -> dict:
+        return {
+            "type": "assistant.text.delta",
+            "text": text,
+            "turn_id": turn_id,
+            "is_final": True,
+            "source": "application",
+        }
 
     async def close(self) -> None:
         if self.websocket:

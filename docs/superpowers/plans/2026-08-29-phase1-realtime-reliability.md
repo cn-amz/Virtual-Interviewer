@@ -402,7 +402,7 @@ Commit: `feat: add optional realtime playback gate`
 
 **Interfaces:** None.
 
-- [ ] **Step 1: Run full automated verification**
+- [x] **Step 1: Run full automated verification**
 
 Run: `services/api/.venv/Scripts/python.exe -m pytest services/api/tests -v`
 
@@ -412,11 +412,11 @@ Run: `npm run build`
 
 Expected: all pass.
 
-- [ ] **Step 2: Run local browser/provider smoke**
+- [x] **Step 2: Run local browser/provider smoke**
 
 Verify Bailian records only provider ASR, messages auto-follow, cancel creates no report, finish waits for persistence, and a 20-minute synthetic packet loop creates a Ledger under 1 MB. Verify MiniCPM loading disables connect and idle re-enables it without opening a stale WebSocket.
 
-- [ ] **Step 3: Append resolutions and reusable lessons**
+- [x] **Step 3: Append resolutions and reusable lessons**
 
 Record root cause, implementation, commands, and observed outcomes in `docs/issues.md`. Update the realtime knowledge card with authoritative ASR, turn identity, and durable completion semantics.
 

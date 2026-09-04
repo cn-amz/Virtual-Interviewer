@@ -4,6 +4,8 @@ Realtime virtual interviewer for the Southeast University AI+ Innovation Applica
 
 Chinese usage guide: [README_CN.md](README_CN.md).
 
+Windows Bailian API quick start: configure `services/api/.env`, then double-click `start-api.cmd`. See [docs/bailian-api-setup.md](docs/bailian-api-setup.md) for API-key security, model configuration, startup, and troubleshooting. API mode does not require Docker or MiniCPM.
+
 The current project is a local-first interview practice app:
 
 - Frontend: React + Vite interview UI.
@@ -21,8 +23,9 @@ services/api/.env.example Safe Bailian config template
 docs/issues.md            Historical issue log with diagnosis and fixes
 docs/unresolved-issues.md Current unresolved problems and next actions
 docs/progress.md          Progress report
-data/job_descriptions/    Public JD placeholder
-data/profiles/            Local private profile data, ignored by Git
+data/interview_job_descriptions/  Interview-only JD snapshots, ignored by Git
+data/interview_profiles/          Interview-only profile snapshots, ignored by Git
+data/profiles/                    Resume optimization and fine-tuning source data, not runtime resume input
 ```
 
 ## Prerequisites
@@ -35,7 +38,7 @@ data/profiles/            Local private profile data, ignored by Git
 ## Backend Setup
 
 ```powershell
-cd <project-root>\services\api
+Set-Location -LiteralPath '.\services\api'
 python -m venv .venv
 .\.venv\Scripts\pip install -e ".[dev]"
 ```
@@ -64,8 +67,8 @@ Use `REALTIME_MODE=mock` for offline development. Use `TEXT_MODE=local` when typ
 Start backend:
 
 ```powershell
-cd <project-root>\services\api
-.\.venv\Scripts\python.exe -m uvicorn app.main:app --host 127.0.0.1 --port 8000
+Set-Location -LiteralPath '.\services\api'
+.\.venv\Scripts\python.exe -m uvicorn app.main:create_app --factory --host 127.0.0.1 --port 8000
 ```
 
 Health check:
@@ -77,7 +80,7 @@ Invoke-RestMethod http://127.0.0.1:8000/api/health
 ## Frontend Setup
 
 ```powershell
-cd <project-root>\apps\web
+Set-Location -LiteralPath '.\apps\web'
 npm install
 npm run dev -- --host 127.0.0.1 --port 5173
 ```
@@ -106,14 +109,14 @@ Open `http://127.0.0.1:5173/`.
 Backend:
 
 ```powershell
-cd <project-root>\services\api
+Set-Location -LiteralPath '.\services\api'
 .\.venv\Scripts\pytest -q
 ```
 
 Frontend:
 
 ```powershell
-cd <project-root>\apps\web
+Set-Location -LiteralPath '.\apps\web'
 npm run build
 ```
 
@@ -122,4 +125,9 @@ npm run build
 - Do not commit `services/api/.env`.
 - Do not commit real API keys.
 - Do not commit private resume/profile files unless they are intentionally sanitized.
-- Local private profile data under `data/profiles/` is ignored by Git.
+- The interview runtime reads private snapshots from `data/interview_profiles/` and `data/interview_job_descriptions/`.
+- The source database under `data/profiles/` is ignored by Git and is not used as the runtime resume.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).

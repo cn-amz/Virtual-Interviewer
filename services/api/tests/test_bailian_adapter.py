@@ -61,20 +61,82 @@ def test_adapter_exposes_interviewer_system_prompt():
     assert "不是通用 AI 助手" in adapter.system_prompt
 
 
+def test_adapter_includes_job_specific_direction_and_focus():
+    adapter = BailianRealtimeAdapter(
+        BailianRealtimeConfig(
+            api_key="sk-test",
+            model="qwen3.5-omni-plus-realtime",
+            url="wss://example.com",
+            role_direction="电机与伺服控制",
+            interview_focus=("FOC/PID", "振动抑制"),
+            initial_prompt="只验证候选人的真实代码职责。",
+        )
+    )
+
+    assert "电机与伺服控制" in adapter.system_prompt
+    assert "FOC/PID、振动抑制" in adapter.system_prompt
+    assert "只验证候选人的真实代码职责" in adapter.system_prompt
+
+
+def test_adapter_includes_raw_jd_and_saved_question_strategy():
+    adapter = BailianRealtimeAdapter(
+        BailianRealtimeConfig(
+            api_key="sk-test",
+            model="qwen3.5-omni-plus-realtime",
+            url="wss://example.com",
+            target_role="多模态应用工程师",
+            job_description_text="负责多模态检索、RAG 评估与线上效果优化。",
+            question_strategy=("追问检索指标", "核验线上优化证据"),
+        )
+    )
+
+    assert "负责多模态检索、RAG 评估与线上效果优化" in adapter.system_prompt
+    assert "追问检索指标、核验线上优化证据" in adapter.system_prompt
+
+
 def test_adapter_maps_bailian_server_events():
     adapter = BailianRealtimeAdapter(
         BailianRealtimeConfig(api_key="sk-test", model="qwen3.5-omni-plus-realtime", url="wss://example.com")
     )
 
-    assert adapter.map_server_event({"type": "response.audio_transcript.delta", "delta": "继续说"}) == [
-        {"type": "assistant.text.delta", "text": "继续说"}
+    assert adapter.map_server_event(
+        {
+            "type": "response.audio_transcript.delta",
+            "response_id": "resp_3",
+            "item_id": "item_8",
+            "delta": "继续说",
+        }
+    ) == [
+        {
+            "type": "assistant.text.delta",
+            "text": "继续说",
+            "turn_id": "resp_3",
+            "item_id": "item_8",
+            "response_id": "resp_3",
+            "is_final": False,
+            "source": "provider",
+        }
     ]
     assert adapter.map_server_event({"type": "response.audio.delta", "delta": "AAAA"}) == [
         {"type": "assistant.audio.chunk", "mime_type": "audio/pcm", "sample_rate": 24000, "data": "AAAA"}
     ]
     assert adapter.map_server_event(
-        {"type": "conversation.item.input_audio_transcription.completed", "transcript": "我的项目是..."}
-    ) == [{"type": "transcript.item", "speaker": "candidate", "text": "我的项目是..."}]
+        {
+            "type": "conversation.item.input_audio_transcription.completed",
+            "item_id": "item_7",
+            "transcript": "我的项目是...",
+        }
+    ) == [
+        {
+            "type": "transcript.item",
+            "speaker": "candidate",
+            "text": "我的项目是...",
+            "turn_id": "item_7",
+            "item_id": "item_7",
+            "is_final": True,
+            "source": "provider_asr",
+        }
+    ]
     assert adapter.map_server_event({"type": "error", "error": {"message": "bad request"}}) == [
         {"type": "realtime.error", "message": "bad request"}
     ]
@@ -92,7 +154,15 @@ async def test_receive_events_reads_and_maps_one_server_event():
 
     events = await adapter.receive_events()
 
-    assert events == [{"type": "assistant.text.delta", "text": "追问"}]
+    assert events == [
+        {
+            "type": "assistant.text.delta",
+            "text": "追问",
+            "turn_id": "local-assistant-1",
+            "is_final": False,
+            "source": "provider",
+        }
+    ]
 
 
 @pytest.mark.asyncio
