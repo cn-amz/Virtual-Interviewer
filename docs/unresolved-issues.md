@@ -1,6 +1,6 @@
 # Current Unresolved Issues
 
-Updated: 2026-08-18
+Updated: 2026-09-05
 
 This file tracks currently open work. Resolved problems and their final fixes belong in `docs/issues.md`.
 
@@ -55,6 +55,17 @@ This file tracks currently open work. Resolved problems and their final fixes be
 - Gap: No stable public HTTPS URL, domain, or tested tunnel workflow is finalized.
 - Impact: Competition deliverables require an online app link, and microphone behavior must be tested over a real browser-accessible deployment.
 - Next action: Choose one deployment path and write a runnable runbook: temporary tunnel for early demo or Aliyun/ECS/SAE/Function Compute for final submission.
+
+### 17. Voice Endpointing Treats Hesitation Or Breath As A Completed Answer
+
+- Status: Open
+- Severity: High
+- Area: Realtime audio, VAD, turn taking
+- Current state: Real microphone sessions can close a candidate turn during a short hesitation and let the interviewer continue, while breath noise can occasionally become candidate speech evidence.
+- Gap: Acoustic VAD boundaries are not checked against minimum voiced duration, ASR confidence, or semantic answer completeness before the next question begins.
+- Impact: The interviewer can interrupt an unfinished answer, score noise as evidence, and create an unnatural conversation rhythm.
+- Next action: Capture representative audio traces, calibrate VAD thresholds and silence duration, add a short semantic grace window, and reject low-information ASR turns before triggering follow-up generation.
+- Acceptance: Short pauses inside a sentence do not end the turn, breath-only input creates no transcript or score evidence, and normal answers still receive a response within the agreed latency budget.
 
 ## P1 - Product Loop
 
@@ -117,6 +128,61 @@ This file tracks currently open work. Resolved problems and their final fixes be
 - Gap: Browser containers may suppress custom URI navigation and cannot report whether Obsidian accepted the request.
 - Impact: A user may need one manual step to open the generated vault.
 - Next action: Add optional vault registration and a local helper/deep-link handshake only if the competition demo environment needs one-click opening.
+
+### 18. Interview Coverage Overweights Project Depth And Engineering Detail
+
+- Status: Open
+- Severity: High
+- Area: Interview orchestration, JD grounding
+- Current state: Follow-up depth and engineering investigation are useful, but sessions ask too few foundation questions and too few direct questions about JD fit.
+- Gap: The interviewer has no explicit competency coverage ledger or stage quota balancing fundamentals, role requirements, project depth, engineering practice, and behavioral evidence.
+- Impact: A technically deep interview can still produce an incomplete assessment of basic knowledge and actual position fit.
+- Next action: Derive a competency matrix from the JD, assign duration-aware question budgets, and let follow-ups consume a bounded budget rather than the whole session.
+- Acceptance: Every completed interview reports which competency dimensions were covered, and a normal-length session includes both foundation and JD-fit evidence without sacrificing targeted project follow-ups.
+
+### 19. Historical Reports And Ability Branches Contain Unstable Or Boilerplate Conclusions
+
+- Status: Open
+- Severity: High
+- Area: Reporting, scoring, ability tree
+- Current state: Some historical ability branches appear incorrect, while several phrases remain present regardless of interview quality.
+- Gap: Deterministic fallback copy, model-generated conclusions, and evidence-backed ability updates are not separated clearly enough; some nodes can be created without a strong transcript citation.
+- Impact: Reports can look plausible while failing to distinguish strong, weak, repeated, or empty interviews.
+- Next action: Trace each report field and tree mutation to source turns, remove unconditional assessment copy, and add contrast tests for empty, weak, repeated, and strong answer sets.
+- Acceptance: Every evaluative branch cites interview evidence, materially different interviews produce materially different conclusions, and empty or repeated content cannot receive generic positive growth text.
+
+### 20. Persisted JD Analysis Is Not Discoverable After The Initial Action
+
+- Status: Open
+- Severity: Medium
+- Area: JD analysis, data-management UX
+- Current state: Clicking `AI 分析面试重点` shows the result immediately and persists a `*.analysis.json`, but returning to the page only shows that analysis exists and offers no clear way to reopen it.
+- Gap: The frontend does not load or expose the existing analysis artifact as a first-class detail view.
+- Impact: Users cannot inspect, compare, or trust the exact interview focus that will be injected later.
+- Next action: Add `查看分析` and `重新分析` actions, load persisted analysis on demand, and display analysis mode, source, update time, focus points, question strategy, and opening prompt.
+- Acceptance: Reloading the application preserves a visible path to the saved analysis without making another model call.
+
+### 21. Ability Tree Information Architecture Does Not Explain Growth Clearly
+
+- Status: Open
+- Severity: High
+- Area: Ability tree UX and domain model
+- Current state: Ability types, canonical questions, answer evidence, knowledge points, strengths, and target skills coexist, but the hierarchy and the meaning of “待提升” remain difficult to understand.
+- Gap: Observed evidence, assessed capability, knowledge gaps, and recommended next actions are not visually and semantically separated.
+- Impact: Users cannot quickly answer what was tested, what evidence supports the assessment, what is missing, or what to practice next.
+- Next action: Redesign the tree around stable competency domains with separate evidence and growth-plan views, explicit node status, evidence count, confidence, and next action.
+- Acceptance: A first-time user can trace any conclusion back to an answer and identify the next practice action without reading raw JSON or internal terminology.
+
+### 22. A Fresh Clone Cannot Bootstrap A Complete Interview Profile From The UI
+
+- Status: Open
+- Severity: High
+- Area: Open-source onboarding, profile management
+- Current state: Private profile data is correctly excluded from Git, and uploading a resume creates `profile.json`, but realtime context loading also requires `prompt.txt` and `qa_bank.md`.
+- Gap: The UI and backend do not create safe defaults or explain the missing files before session creation.
+- Impact: A new open-source user can configure the API and upload a resume yet still fail to start the first interview.
+- Next action: Add a sanitized starter profile or generate minimal prompt and QA files during profile creation, then validate completeness in the setup page.
+- Acceptance: A fresh clone can reach a working first interview using only documented setup and UI actions, with no private files or manual directory repair.
 
 ## P2 - Polish And Expansion
 

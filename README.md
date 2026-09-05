@@ -1,8 +1,8 @@
 # Virtual Interviewer
 
-Realtime virtual interviewer for the Southeast University AI+ Innovation Application Competition.
+[简体中文](README_CN.md) | English
 
-Chinese usage guide: [README_CN.md](README_CN.md).
+Realtime virtual interviewer for the Southeast University AI+ Innovation Application Competition.
 
 Windows Bailian API quick start: configure `services/api/.env`, then double-click `start-api.cmd`. See [docs/bailian-api-setup.md](docs/bailian-api-setup.md) for API-key security, model configuration, startup, and troubleshooting. API mode does not require Docker or MiniCPM.
 

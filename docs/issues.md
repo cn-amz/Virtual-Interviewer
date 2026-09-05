@@ -761,3 +761,57 @@ This file records user-discovered and Codex-discovered issues that may become ma
 - Initial state: Tracked source, tests, documentation, and one screenshot contained personal identifiers, an internal-only source address, and machine-specific local paths. The repository also had no explicit open-source license.
 - Resolution: Replaced public-facing personal identifiers with the project pseudonym, removed the internal address, converted local paths to repository-relative instructions or neutral placeholders, removed the affected screenshot, and added the MIT License.
 - Verified outcome: The current index and all reachable revisions contain no old personal identifier, private-network address, machine-specific Windows path, contact identifier, high-confidence credential, private key, or sensitive document type. Backend tests pass with 126 tests, frontend tests pass with 22 tests, the production build succeeds, the API configuration check succeeds, and `git diff --check` reports no errors.
+
+## 2026-09-05 - Voice Turn Endpointing And Breath False Positives
+
+- Discovered by: User during a real Bailian voice interview.
+- Severity: High.
+- Initial state: A brief pause inside an answer can be treated as the end of the candidate turn, after which the interviewer continues with a follow-up. Breath noise can also occasionally be recognized as speech.
+- Working hypothesis: Server VAD is making an acoustic boundary decision without enough minimum-speech filtering, ASR confidence checks, or semantic completeness validation. This must be confirmed with timestamped audio, VAD, transcript, and response events before changing thresholds.
+- Resolution direction: Add diagnostic timing, reject breath-only or low-information turns, calibrate VAD and silence duration against real recordings, and introduce a bounded semantic grace window before creating the next response.
+- Verification target: Hesitations do not prematurely close a sentence, breath-only input produces no transcript evidence, and valid answers retain acceptable response latency.
+
+## 2026-09-05 - Interview Coverage Lacks Fundamentals And Direct JD-Fit Evidence
+
+- Discovered by: User while reviewing the balance of recent interviews.
+- Severity: High.
+- Initial state: The interviewer now reaches useful project depth and engineering detail, but asks relatively few foundation questions and relatively few questions that directly test the selected role requirements.
+- Working hypothesis: Adaptive follow-ups have no shared coverage budget, so successful project deep-dives can consume the session before foundation and JD-fit dimensions are sampled.
+- Resolution direction: Build a JD-derived competency matrix and a duration-aware coverage ledger covering fundamentals, role fit, project depth, engineering practice, and behavioral evidence. Keep one objective per question and cap consecutive follow-ups.
+- Verification target: The report shows coverage by dimension, and a normal interview collects both foundation and JD-fit evidence while retaining relevant project depth.
+
+## 2026-09-05 - Historical Report And Ability Branch Conclusions Are Not Reliably Evidence-Grounded
+
+- Discovered by: User while reviewing historical reports and ability-tree branches.
+- Severity: High.
+- Initial state: Some branches appear to be assigned incorrectly, and some report wording remains unchanged regardless of interview quality.
+- Working hypothesis: Deterministic fallback phrases and model conclusions can enter the same report schema without field-level provenance, while ability updates accept conclusions that are not tied strongly enough to transcript spans.
+- Resolution direction: Trace every evaluative field and tree mutation to source evidence, label fallback output, remove unconditional praise or gap text, and compare empty, weak, repeated, and strong interview fixtures.
+- Verification target: Different evidence produces different conclusions, repeated or empty answers cannot create positive growth, and each evaluative node exposes its supporting turn.
+
+## 2026-09-05 - Saved JD Analysis Cannot Be Reopened Clearly
+
+- Discovered by: User after running `AI 分析面试重点` and returning to the data page.
+- Severity: Medium.
+- Initial state: JD analysis is persisted beside the JD and `analysis_ready` remains visible, but the detailed focus points, strategy, and opening prompt are only shown immediately after the analysis action.
+- Root cause evidence: The backend already exposes persisted analysis, while the current data page only stores the newly returned analysis in component state and has no `查看分析` action.
+- Resolution direction: Load saved analysis on demand and separate `查看分析` from `重新分析`; show analysis mode, sources, timestamp, focus points, strategy, and initial prompt.
+- Verification target: A page reload can reopen the exact saved analysis without consuming another model call.
+
+## 2026-09-05 - Ability Tree Structure And Improvement Semantics Are Unclear
+
+- Discovered by: User while reviewing the current ability-tree screen.
+- Severity: High.
+- Initial state: Competency types, questions, answer evidence, knowledge points, strengths, and target skills are present, but their hierarchy is difficult to scan and “待提升” mixes missing knowledge, weak evidence, and recommended practice.
+- Working hypothesis: The persistence model grew from evidence storage, while the UI also tries to serve assessment and planning without a clear separation between those concerns.
+- Resolution direction: Define stable competency domains, separate the evidence tree from the growth plan, and give each assessed node a status, evidence count, confidence, rationale, and next action.
+- Verification target: Users can identify what was tested, inspect the evidence, understand the gap, and choose the next practice action from one coherent flow.
+
+## 2026-09-05 - Fresh-Clone Profile Bootstrap Is Incomplete
+
+- Discovered by: Codex while rewriting the public Chinese README from the actual first-run flow.
+- Severity: High.
+- Initial state: A public clone contains no private Profile data. Uploading a resume creates `profile.json`, but `load_session_profile` also reads `prompt.txt` and `qa_bank.md`, which the upload flow does not create.
+- Root cause: The original runtime assumed a pre-existing private Profile snapshot, while the later data-management UI implemented resume upload without owning complete Profile creation.
+- Resolution direction: Generate safe default context files or provide a tracked sanitized starter template, then validate Profile completeness before enabling interview start.
+- Verification target: A new user can clone, configure, upload a resume and JD, and begin an interview without manually repairing the data directory.
